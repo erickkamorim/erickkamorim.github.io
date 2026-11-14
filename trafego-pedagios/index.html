@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIXO · Os pedágios como termômetro da economia</title>
+<meta name="description" content="Análise do tráfego nas praças de pedágio das rodovias federais (ANTT, 2019 a 2021): carros e caminhões antes, durante e depois da pandemia. Projeto de Erick Amorim.">
+<meta property="og:title" content="EIXO · Os pedágios como termômetro da economia">
+<meta property="og:description" content="Em abril de 2020, os carros sumiram das estradas. Os caminhões, não. Dados abertos da ANTT, 115 praças, 2019 a 2021.">
+<meta property="og:image" content="https://erickkamorim.github.io/trafego-pedagios/img/capa.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700;800;900&family=Overpass+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b6b43'/><rect x='3' y='3' width='26' height='26' rx='5' fill='none' stroke='white' stroke-width='2'/><text x='16' y='22' font-family='Arial' font-weight='900' font-size='15' fill='white' text-anchor='middle'>E</text></svg>">
+<style>
+  :root {
+    --bg: #f4f5f1; --papel: #ffffff; --tinta: #15201b; --mut: #5b6660; --mut2: #8a948e; --linha: #dfe3dc;
+    --placa: #0b6b43; --placa-esc: #08553a; --asfalto: #222724; --faixa: #f2c200;
+    --cam: #0e7a4b;   /* caminhões (comerciais) */
+    --car: #b88400;   /* carros (passeio) */
+    --larg: 1140px;
+    --fonte: "Overpass", system-ui, sans-serif; --mono: "Overpass Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--tinta); font-family: var(--fonte); font-size: 17px; line-height: 1.55;
+         -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  .wrap { max-width: var(--larg); margin: 0 auto; padding: 0 28px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .grande { font-family: var(--fonte); font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+
+  /* ---------- topo ---------- */
+  header.topo { position: sticky; top: 0; z-index: 20; background: rgba(244,245,241,.9); backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--linha); }
+  .topo .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
+  .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 900; letter-spacing: .06em; }
+  .escudo { width: 34px; height: 38px; flex: none; }
+  .marca small { font-weight: 600; letter-spacing: 0; color: var(--mut); font-size: 13px; }
+  .topo nav { margin-left: auto; display: flex; gap: 4px; }
+  .topo nav a { text-decoration: none; font-weight: 700; font-size: 14px; padding: 7px 12px; border-radius: 8px; color: var(--mut); }
+  .topo nav a:hover { color: var(--tinta); background: #e7eae4; }
+  .topo nav a.gh { color: #fff; background: var(--placa); }
+  .topo nav a.gh:hover { background: var(--placa-esc); }
+
+  /* ---------- abertura ---------- */
+  .abertura { padding: 64px 0 56px; }
+  .abertura .wrap { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+  .chapeu { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; letter-spacing: .12em;
+            text-transform: uppercase; color: var(--placa); }
+  .chapeu::before { content: ""; width: 26px; height: 4px; background: repeating-linear-gradient(90deg, var(--faixa) 0 8px, transparent 8px 12px); }
+  h1 { font-weight: 900; font-size: clamp(36px, 5.2vw, 62px); line-height: 1.02; letter-spacing: -.02em; margin: 16px 0 20px; }
+  h1 em { font-style: normal; color: var(--placa); }
+  .lead { font-size: 19px; color: var(--mut); max-width: 560px; }
+  .lead b { color: var(--tinta); }
+  .fonte-linha { margin-top: 22px; font-size: 14px; color: var(--mut2); }
+
+  /* placa de rodovia (destino e distância) */
+  .placa { background: var(--placa); border-radius: 18px; padding: 10px; color: #fff;
+           box-shadow: 0 2px 0 var(--placa-esc), 0 24px 50px -18px rgba(11,107,67,.55); transform: rotate(-1.2deg); }
+  .placa-in { border: 3px solid #fff; border-radius: 11px; padding: 22px 24px 18px; }
+  .placa-topo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 14px; letter-spacing: .06em;
+                text-transform: uppercase; opacity: .92; margin-bottom: 14px; }
+  .placa-topo .br { background: #fff; color: var(--placa); border-radius: 6px; padding: 2px 8px 0; font-weight: 900; }
+  .destino { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px; padding: 12px 0;
+             border-top: 2px solid rgba(255,255,255,.28); }
+  .destino:first-of-type { border-top: 0; }
+  .destino svg { width: 30px; height: 30px; }
+  .destino .nome { font-weight: 800; font-size: 25px; line-height: 1.1; }
+  .destino .nome small { display: block; font-weight: 600; font-size: 13.5px; opacity: .78; }
+  .destino .km { font-weight: 900; font-size: 36px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .placa-pe { margin-top: 10px; font-size: 13px; opacity: .8; }
+
+  /* faixa de asfalto entre partes */
+  .asfalto { height: 54px; background: var(--asfalto); position: relative; overflow: hidden; }
+  .asfalto::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 5px; transform: translateY(-50%);
+                    background: repeating-linear-gradient(90deg, var(--faixa) 0 46px, transparent 46px 82px); }
+  .asfalto::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; bottom: 7px;
+                     border-top: 2px solid rgba(255,255,255,.55); border-bottom: 2px solid rgba(255,255,255,.55); }
+
+  /* ---------- números ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 54px 0 0; }
+  .kpi { background: var(--papel); border: 1px solid var(--linha); border-radius: 16px; padding: 18px 20px; }
+  .kpi .rot { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--mut); }
+  .kpi .rot i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .kpi .v { font-weight: 900; font-size: 38px; letter-spacing: -.02em; margin-top: 4px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .kpi .d { font-size: 13.5px; color: var(--mut); }
+
+  /* ---------- seções ---------- */
+  section.parte { padding: 72px 0 8px; scroll-margin-top: 64px; }
+  .cab { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 26px; }
+  .marco { flex: none; width: 58px; border: 2.5px solid var(--tinta); border-radius: 8px 8px 4px 4px; background: #fff;
+           text-align: center; padding: 4px 0 3px; line-height: 1; }
+  .marco small { display: block; font-weight: 800; font-size: 11px; letter-spacing: .08em; }
+  .marco b { display: block; font-weight: 900; font-size: 24px; margin-top: 3px; }
+  h2 { font-weight: 900; font-size: clamp(26px, 3.2vw, 36px); line-height: 1.1; letter-spacing: -.015em; }
+  .cab p { color: var(--mut); margin-top: 8px; max-width: 760px; }
+  .cab p b { color: var(--tinta); }
+
+  .cartao { background: var(--papel); border: 1px solid var(--linha); border-radius: 20px; padding: 24px 26px 18px; }
+  .cartao + .cartao { margin-top: 18px; }
+  .duas .cartao, .limites .cartao { margin-top: 0; }
+  .ct-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+  .ct-topo h3 { font-weight: 800; font-size: 19px; }
+  .ct-topo p { color: var(--mut); font-size: 14.5px; margin-top: 2px; }
+  .legenda { display: flex; gap: 16px; font-size: 14px; font-weight: 700; color: var(--mut); }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 18px; height: 4px; border-radius: 2px; }
+  .legenda i.pt { width: 10px; height: 10px; border-radius: 50%; }
+  .grafico { position: relative; width: 100%; }
+  .grafico svg { display: block; width: 100%; overflow: visible; }
+  .nota { font-size: 13.5px; color: var(--mut2); margin-top: 10px; }
+
+  .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+  svg text { font-family: var(--fonte); }
+  .eixo-t { fill: var(--mut2); font-size: 12px; font-weight: 600; }
+  .grade { stroke: #eceee9; stroke-width: 1; }
+  .zero { stroke: #9aa39d; stroke-width: 1.2; }
+  .rotulo { font-size: 13px; font-weight: 800; }
+  .anot { fill: var(--tinta); font-size: 12.5px; font-weight: 700; }
+  .anot-s { fill: var(--mut); font-size: 12px; font-weight: 600; }
+
+  /* tooltip */
+  .dica { position: absolute; pointer-events: none; z-index: 5; background: var(--tinta); color: #fff; border-radius: 10px;
+          padding: 9px 12px; font-size: 13px; line-height: 1.4; min-width: 150px; opacity: 0; transition: opacity .12s;
+          box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+  .dica.on { opacity: 1; }
+  .dica b { display: block; font-size: 13.5px; margin-bottom: 3px; }
+  .dica .l { display: flex; justify-content: space-between; gap: 14px; }
+  .dica .l span { display: inline-flex; align-items: center; gap: 6px; color: #cfd6d1; }
+  .dica .l i { width: 9px; height: 9px; border-radius: 2px; }
+  .dica .num { font-weight: 700; }
+
+  /* limpeza */
+  .sujeiras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .suj { background: var(--papel); border: 1px solid var(--linha); border-radius: 16px; padding: 18px 18px 16px; position: relative; overflow: hidden; }
+  .suj::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 6px;
+                 background: repeating-linear-gradient(135deg, var(--faixa) 0 10px, var(--asfalto) 10px 20px); }
+  .suj .antes { font-weight: 900; font-size: 32px; margin-top: 8px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .suj .antes s { color: var(--mut2); text-decoration-thickness: 2px; }
+  .suj h4 { font-weight: 800; font-size: 16px; margin-top: 4px; }
+  .suj p { font-size: 14px; color: var(--mut); margin-top: 6px; }
+  .suj code, .cab code, .como code, .parada code { font-family: var(--mono); font-size: .88em; background: #eef0eb; border-radius: 5px; padding: 1px 5px; }
+
+  .armadilha { margin-top: 18px; display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;
+               background: #fff8db; border: 1px solid #f0dc8a; border-radius: 18px; padding: 22px 24px; }
+  .armadilha .ic { width: 54px; height: 54px; }
+  .armadilha h4 { font-weight: 900; font-size: 19px; }
+  .armadilha p { color: #4d4a3a; font-size: 15.5px; margin-top: 4px; }
+  .armadilha .comp { display: flex; gap: 22px; margin-top: 12px; flex-wrap: wrap; }
+  .armadilha .comp div { font-size: 14px; color: #6b6550; }
+  .armadilha .comp b { display: block; font-weight: 900; font-size: 30px; color: var(--tinta); font-variant-numeric: tabular-nums; }
+
+  /* como foi feito */
+  .rota { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 6px; position: relative; }
+  .parada { position: relative; padding: 0 16px 0 0; }
+  .parada .pino { width: 44px; height: 44px; border-radius: 50%; background: var(--placa); color: #fff; display: grid; place-items: center;
+                  font-weight: 900; font-size: 18px; border: 4px solid var(--bg); box-shadow: 0 0 0 2px var(--placa);
+                  position: relative; z-index: 1; }
+  .rota::before { content: ""; position: absolute; left: 22px; right: 60px; top: 21px; height: 3px;
+                  background: repeating-linear-gradient(90deg, var(--placa) 0 12px, transparent 12px 20px); }
+  .parada h4 { font-weight: 800; font-size: 17px; margin-top: 12px; }
+  .parada p { font-size: 14.5px; color: var(--mut); margin-top: 4px; }
+  .limites { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .limites ul { list-style: none; }
+  .limites li { position: relative; padding-left: 22px; font-size: 15px; color: var(--mut); margin-top: 8px; }
+  .limites li::before { content: ""; position: absolute; left: 0; top: 8px; width: 10px; height: 10px; border-radius: 2px; background: var(--faixa);
+                        border: 2px solid var(--asfalto); transform: rotate(45deg); }
+  .limites li b { color: var(--tinta); }
+  .limites h4 { font-weight: 800; font-size: 17px; }
+  .arquivos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .arquivos a { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 700; font-size: 14.5px;
+                background: var(--papel); border: 1px solid var(--linha); border-radius: 10px; padding: 9px 13px; }
+  .arquivos a:hover { border-color: var(--placa); color: var(--placa); }
+  .arquivos svg { width: 17px; height: 17px; }
+
+  footer { margin-top: 84px; background: var(--asfalto); color: #cfd6d1; }
+  footer .faixa { height: 5px; background: repeating-linear-gradient(90deg, var(--faixa) 0 46px, transparent 46px 82px); }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; padding-top: 30px; padding-bottom: 34px; font-size: 14.5px; }
+  footer a { color: #fff; font-weight: 700; }
+  footer .marca { color: #fff; }
+
+  @media (max-width: 980px) {
+    .abertura .wrap { grid-template-columns: 1fr; gap: 40px; }
+    .placa { max-width: 520px; }
+    .kpis, .sujeiras { grid-template-columns: 1fr 1fr; }
+    .duas, .limites { grid-template-columns: 1fr; }
+    .rota { grid-template-columns: 1fr 1fr; row-gap: 26px; }
+    .rota::before { display: none; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 18px; }
+    .topo nav a:not(.gh), .topo .marca small { display: none; }
+    .abertura { padding: 40px 0 44px; }
+    .lead { font-size: 17px; }
+    .destino .nome { font-size: 20px; } .destino .km { font-size: 27px; }
+    .placa-in { padding: 18px 16px 14px; }
+    .kpi .v { font-size: 27px; }
+    .cartao { padding: 18px 14px 14px; border-radius: 16px; }
+    .cab { gap: 14px; } .marco { width: 50px; } .marco b { font-size: 20px; }
+    .sujeiras, .rota { grid-template-columns: 1fr; }
+    .armadilha { grid-template-columns: 1fr; }
+    section.parte { padding-top: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-carro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 16V11.5L7 6.5C7.3 5.7 8 5.2 8.9 5.2H15.1C16 5.2 16.7 5.7 17 6.5L19 11.5V16"/><path d="M3.5 11.5H20.5V16.5H3.5Z"/><circle cx="7.5" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/>
+    </symbol>
+    <symbol id="i-caminhao" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 6H14.5V16.5H2.5Z"/><path d="M14.5 9.5H18.5L21.5 13V16.5H14.5"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/>
+    </symbol>
+    <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></symbol>
+    <symbol id="i-gh" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.3 1.9 1.3 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.8 18.3 5.1 18.3 5.1c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></symbol>
+    <symbol id="i-arq" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z"/><path d="M14 3v5h5"/></symbol>
+    <symbol id="i-escudo" viewBox="0 0 34 38">
+      <path d="M3 3H31V21C31 29 24 34 17 36C10 34 3 29 3 21Z" fill="#fff" stroke="#15201b" stroke-width="2.5"/>
+      <path d="M3 3H31V11H3Z" fill="#15201b"/>
+      <text x="17" y="9.6" text-anchor="middle" font-size="6.5" font-weight="900" fill="#fff" font-family="Overpass, Arial">BR</text>
+      <text x="17" y="27" text-anchor="middle" font-size="12" font-weight="900" fill="#15201b" font-family="Overpass, Arial">E</text>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="topo">
+  <div class="wrap">
+    <a class="marca" href="#"><svg class="escudo"><use href="#i-escudo"/></svg><span>EIXO <small>· tráfego nas rodovias federais</small></span></a>
+    <nav>
+      <a href="#termometro">Termômetro</a>
+      <a href="#concessionarias">Rodovias</a>
+      <a href="#limpeza">Limpeza</a>
+      <a href="#como">Como foi feito</a>
+      <a class="gh" href="https://github.com/erickkamorim/trafego-pedagios">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<section class="abertura">
+  <div class="wrap">
+    <div>
+      <span class="chapeu">Dados abertos da ANTT · 2019 a 2021</span>
+      <h1>Em abril de 2020, os carros sumiram das estradas. <em>Os caminhões, não.</em></h1>
+      <p class="lead">Analisei <b id="t-total"></b> passagens pelas praças de pedágio das rodovias federais concedidas para responder uma pergunta: <b>o fluxo de caminhões funciona como termômetro da economia?</b></p>
+      <p class="fonte-linha">Fonte: ANTT, volume de tráfego por praça de pedágio. Comparação feita nas <span id="t-pracas"></span> praças que informaram os 36 meses.</p>
+    </div>
+    <div class="placa" role="img" aria-label="Abril de 2020 contra abril de 2019">
+      <div class="placa-in">
+        <div class="placa-topo"><span class="br">ABR/20</span> contra abril de 2019</div>
+        <div class="destino"><svg><use href="#i-carro"/></svg><div class="nome">Carros<small>veículos de passeio</small></div><div class="km" id="p-car"></div></div>
+        <div class="destino"><svg><use href="#i-caminhao"/></svg><div class="nome">Caminhões<small>veículos comerciais</small></div><div class="km" id="p-cam"></div></div>
+        <p class="placa-pe">Mesmo no pior mês da pandemia, a carga continuou rodando.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="asfalto" aria-hidden="true"></div>
+
+<main class="wrap">
+  <div class="kpis" id="kpis"></div>
+
+  <section class="parte" id="termometro">
+    <div class="cab"><div class="marco"><small>KM</small><b>01</b></div>
+      <div><h2>O termômetro</h2>
+      <p>Cada mês comparado com o mesmo mês de 2019, antes da pandemia. Os caminhões caíram menos, voltaram em <b id="t-volta"></b> e terminaram 2021 rodando acima do nível pré-pandemia. Os carros sentiram cada onda de restrição.</p></div>
+    </div>
+    <div class="cartao">
+      <div class="ct-topo">
+        <div><h3>Variação contra o mesmo mês de 2019</h3><p>Em %. Acima de zero, mais tráfego do que antes da pandemia.</p></div>
+        <div class="legenda"><span><i style="background:var(--cam)"></i>Caminhões</span><span><i style="background:var(--car)"></i>Carros</span></div>
+      </div>
+      <div class="grafico" id="g-termometro"></div>
+      <p class="nota">Fevereiro de 2020 aparece alto para os carros porque o Carnaval caiu em fevereiro naquele ano e em março em 2019.</p>
+    </div>
+    <div class="duas" style="margin-top:18px">
+      <div class="cartao">
+        <div class="ct-topo"><div><h3>A cada 100 veículos, quantos eram caminhões</h3><p>Participação dos comerciais no total do mês.</p></div></div>
+        <div class="grafico" id="g-participacao"></div>
+      </div>
+      <div class="cartao">
+        <div class="ct-topo">
+          <div><h3>Total por ano</h3><p>Milhões de passagens, mesmas 115 praças.</p></div>
+          <div class="legenda"><span><i class="pt" style="background:var(--cam)"></i>Caminhões</span><span><i class="pt" style="background:var(--car)"></i>Carros</span></div>
+        </div>
+        <div class="grafico" id="g-anos"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte" id="concessionarias">
+    <div class="cab"><div class="marco"><small>KM</small><b>02</b></div>
+      <div><h2>Rodovia por rodovia</h2>
+      <p>O padrão se repete em quase todas: <b>em 2020 os carros caíram e os caminhões ficaram perto do zero</b>. As exceções ficam no Rio de Janeiro: na Ponte Rio-Niterói e na Rio-Teresópolis (CRT), os caminhões também caíram forte.</p></div>
+    </div>
+    <div class="cartao">
+      <div class="ct-topo">
+        <div><h3>2020 contra 2019, por concessionária</h3><p>Em %. Ordenado pela queda dos carros.</p></div>
+        <div class="legenda"><span><i class="pt" style="background:var(--cam)"></i>Caminhões</span><span><i class="pt" style="background:var(--car)"></i>Carros</span></div>
+      </div>
+      <div class="grafico" id="g-conc"></div>
+      <p class="nota" id="n-conc"></p>
+    </div>
+    <div class="cartao">
+      <div class="ct-topo"><div><h3>Onde estão os caminhões</h3><p>Participação dos comerciais no tráfego de 2021, por concessionária.</p></div></div>
+      <div class="grafico" id="g-part"></div>
+      <p class="nota">As rodovias do topo são corredores de carga: a BR-163 escoa a safra do Mato Grosso e do Mato Grosso do Sul, e a Régis Bittencourt liga São Paulo ao Sul.</p>
+    </div>
+  </section>
+
+  <section class="parte" id="limpeza">
+    <div class="cab"><div class="marco"><small>KM</small><b>03</b></div>
+      <div><h2>O que precisei arrumar</h2>
+      <p>A base pública chega com problemas que mudam o resultado se passarem batido. Cada um foi tratado no código e está documentado no <code>analise_pedagio.sql</code>.</p></div>
+    </div>
+    <div class="sujeiras" id="sujeiras"></div>
+    <div class="armadilha">
+      <svg class="ic" viewBox="0 0 54 54" aria-hidden="true"><path d="M27 4 51 47H3Z" fill="#f2c200" stroke="#222724" stroke-width="3" stroke-linejoin="round"/><path d="M27 19v14" stroke="#222724" stroke-width="4" stroke-linecap="round"/><circle cx="27" cy="40" r="2.6" fill="#222724"/></svg>
+      <div>
+        <h4>A armadilha que quase virou manchete errada</h4>
+        <p>Somando por concessionária, os caminhões parecem ter <b>crescido</b> em 2020. Mas a Via Sul abriu cinco praças novas naquele ano, e todo esse tráfego entrava como se fosse crescimento. Comparando praça com praça, o resultado real é estabilidade.</p>
+        <div class="comp">
+          <div>Somando por concessionária<b id="a-conc"></b></div>
+          <div>Mesmas praças nos 3 anos<b id="a-praca"></b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte" id="como">
+    <div class="cab"><div class="marco"><small>KM</small><b>04</b></div>
+      <div><h2>Como foi feito</h2>
+      <p>Do arquivo baixado no portal da ANTT até esta página, tudo é reproduzível com os arquivos do repositório.</p></div>
+    </div>
+    <div class="rota">
+      <div class="parada"><div class="pino">1</div><h4>Coleta</h4><p>Três CSVs do portal de dados abertos da ANTT, um por ano, com <span id="c-linhas"></span> linhas no total.</p></div>
+      <div class="parada"><div class="pino">2</div><h4>Banco</h4><p><code>carregar_dados.py</code> lê os arquivos em Latin-1 e grava tudo numa tabela SQLite.</p></div>
+      <div class="parada"><div class="pino">3</div><h4>Análise em SQL</h4><p>Views de limpeza, CTEs, <code>CASE</code> e <code>RANK() OVER</code> no <code>analise_pedagio.sql</code>.</p></div>
+      <div class="parada"><div class="pino">4</div><h4>Página</h4><p><code>gerar_dados.py</code> repete as contas em pandas e gera os números. Gráficos em SVG feitos à mão, sem biblioteca.</p></div>
+    </div>
+    <div class="limites">
+      <div class="cartao"><h4>Limites da análise</h4><ul>
+        <li><b>Só rodovias federais concedidas.</b> Estradas estaduais e trechos sem pedágio ficam de fora.</li>
+        <li><b>Passagens, não veículos únicos.</b> Um caminhão que cruza três praças conta três vezes.</li>
+        <li><b>Categorias de eixos não são padronizadas</b> entre concessionárias, por isso não separei caminhão leve de pesado.</li>
+        <li><b>Correlação, não causa.</b> O tráfego acompanha a economia, mas a análise não mede o PIB.</li>
+      </ul></div>
+      <div class="cartao"><h4>Arquivos</h4>
+        <p class="nota" style="margin-top:6px">Base: ANTT, licença Creative Commons Atribuição.</p>
+        <div class="arquivos">
+          <a href="https://github.com/erickkamorim/trafego-pedagios"><svg><use href="#i-gh"/></svg>Repositório</a>
+          <a href="https://github.com/erickkamorim/trafego-pedagios/blob/main/analise_pedagio.sql"><svg><use href="#i-arq"/></svg>analise_pedagio.sql</a>
+          <a href="https://github.com/erickkamorim/trafego-pedagios/blob/main/scripts/gerar_dados.py"><svg><use href="#i-arq"/></svg>gerar_dados.py</a>
+          <a href="https://dados.antt.gov.br/dataset/volume-trafego-praca-pedagio"><svg><use href="#i-arq"/></svg>Dados na ANTT</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="faixa"></div>
+  <div class="wrap">
+    <a class="marca" href="#" style="text-decoration:none"><svg class="escudo"><use href="#i-escudo"/></svg><span>EIXO</span></a>
+    <span>Projeto de <a href="https://erickkamorim.github.io/">Erick Amorim</a> · Logística &amp; Dados</span>
+  </div>
+</footer>
+
+<script>
+const D = {"destaque": {"abr_com": -22.4, "abr_pas": -44.7, "ano20_com": 0.2, "ano20_pas": -11.6, "ano21_com": 10.8, "ano21_pas": -3.8, "total_veiculos_mi": 1914.0, "pracas": 131, "concessionarias": 21, "ano20_com_por_conc": 3.5, "volta_comercial": "2020-07", "volta_passeio": null, "part_media_21": 36.4}, "sujeira": {"linhas": {"2019": 33371, "2020": 35300, "2021": 121809}, "categorias_brutas": 44, "categorias_trim": 32, "nomes_conc_2021_brutos": 29, "linhas_diarias": 3314, "nomes_conc_2021_limpos": 21, "concessionarias_dias": ["CRT", "Eco050", "Ecoponte", "Ecosul", "Ecovias do Cerrado", "Rota do Oeste (CRO)", "Transbrasiliana"], "pracas_total": 131, "pracas_completas": 115, "pracas_fora": [{"praca": "P3 - Ituiutaba", "conc": "Ecovias do Cerrado", "meses": 10}, {"praca": "P4 - Santa Vitória", "conc": "Ecovias do Cerrado", "meses": 10}, {"praca": "P5 - Paranaiguara", "conc": "Ecovias do Cerrado", "meses": 10}, {"praca": "P6 - Cachoeira Alta", "conc": "Ecovias do Cerrado", "meses": 12}, {"praca": "P7 - Jataí", "conc": "Ecovias do Cerrado", "meses": 12}, {"praca": "P1 - Uberlândia", "conc": "Ecovias do Cerrado", "meses": 13}, {"praca": "P2 - Monte Alegre", "conc": "Ecovias do Cerrado", "meses": 14}, {"praca": "P1-Três Cachoeiras", "conc": "Via Sul", "meses": 24}, {"praca": "P4-Montenegro", "conc": "Via Sul", "meses": 24}, {"praca": "P5-Paverama", "conc": "Via Sul", "meses": 24}, {"praca": "P6-Fontoura Xavier", "conc": "Via Sul", "meses": 24}, {"praca": "P7-Victor Graeff", "conc": "Via Sul", "meses": 24}, {"praca": "Araguari I", "conc": "Eco050", "meses": 35}, {"praca": "Araguari Ii", "conc": "Eco050", "meses": 35}, {"praca": "Campo Alegre", "conc": "Eco050", "meses": 35}, {"praca": "Ipameri", "conc": "Eco050", "meses": 35}], "cobertura_volume": 95.4, "conc_painel": 20}, "anos": [{"ano": 2019, "comercial": 206.8, "passeio": 401.2, "moto": 14.0}, {"ano": 2020, "comercial": 207.3, "passeio": 354.8, "moto": 13.0}, {"ano": 2021, "comercial": 229.0, "passeio": 386.0, "moto": 13.2}], "serie": [{"mes": "2019-01", "comercial": 16.246, "passeio": 38.638, "moto": 1.206}, {"mes": "2019-02", "comercial": 15.92, "passeio": 28.666, "moto": 1.004}, {"mes": "2019-03", "comercial": 16.741, "passeio": 33.699, "moto": 1.215}, {"mes": "2019-04", "comercial": 16.632, "passeio": 31.402, "moto": 1.189}, {"mes": "2019-05", "comercial": 17.347, "passeio": 30.275, "moto": 1.159}, {"mes": "2019-06", "comercial": 16.489, "passeio": 31.674, "moto": 1.209}, {"mes": "2019-07", "comercial": 17.935, "passeio": 35.471, "moto": 1.144}, {"mes": "2019-08", "comercial": 18.204, "passeio": 31.874, "moto": 1.131}, {"mes": "2019-09", "comercial": 17.762, "passeio": 31.563, "moto": 1.124}, {"mes": "2019-10", "comercial": 18.935, "passeio": 33.31, "moto": 1.221}, {"mes": "2019-11", "comercial": 17.696, "passeio": 33.358, "moto": 1.156}, {"mes": "2019-12", "comercial": 16.874, "passeio": 41.249, "moto": 1.286}, {"mes": "2020-01", "comercial": 16.933, "passeio": 41.431, "moto": 1.201}, {"mes": "2020-02", "comercial": 16.277, "passeio": 33.311, "moto": 1.079}, {"mes": "2020-03", "comercial": 16.853, "passeio": 24.887, "moto": 1.048}, {"mes": "2020-04", "comercial": 12.914, "passeio": 17.353, "moto": 0.882}, {"mes": "2020-05", "comercial": 14.992, "passeio": 21.234, "moto": 0.959}, {"mes": "2020-06", "comercial": 16.178, "passeio": 23.622, "moto": 0.969}, {"mes": "2020-07", "comercial": 18.134, "passeio": 26.69, "moto": 1.065}, {"mes": "2020-08", "comercial": 18.588, "passeio": 28.829, "moto": 1.09}, {"mes": "2020-09", "comercial": 18.986, "passeio": 31.312, "moto": 1.185}, {"mes": "2020-10", "comercial": 19.715, "passeio": 34.768, "moto": 1.188}, {"mes": "2020-11", "comercial": 19.04, "passeio": 32.602, "moto": 1.149}, {"mes": "2020-12", "comercial": 18.644, "passeio": 38.755, "moto": 1.186}, {"mes": "2021-01", "comercial": 17.902, "passeio": 38.05, "moto": 1.217}, {"mes": "2021-02", "comercial": 17.565, "passeio": 30.513, "moto": 0.979}, {"mes": "2021-03", "comercial": 19.443, "passeio": 25.905, "moto": 1.086}, {"mes": "2021-04", "comercial": 18.038, "passeio": 26.706, "moto": 1.1}, {"mes": "2021-05", "comercial": 19.399, "passeio": 30.198, "moto": 1.091}, {"mes": "2021-06", "comercial": 18.79, "passeio": 29.899, "moto": 1.023}, {"mes": "2021-07", "comercial": 20.018, "passeio": 33.885, "moto": 1.061}, {"mes": "2021-08", "comercial": 20.311, "passeio": 31.64, "moto": 1.047}, {"mes": "2021-09", "comercial": 19.225, "passeio": 31.909, "moto": 1.207}, {"mes": "2021-10", "comercial": 19.83, "passeio": 33.631, "moto": 1.059}, {"mes": "2021-11", "comercial": 19.166, "passeio": 32.559, "moto": 1.148}, {"mes": "2021-12", "comercial": 19.341, "passeio": 41.089, "moto": 1.225}], "variacao": [{"mes": "2020-01", "comercial": 4.2, "passeio": 7.2}, {"mes": "2020-02", "comercial": 2.2, "passeio": 16.2}, {"mes": "2020-03", "comercial": 0.7, "passeio": -26.1}, {"mes": "2020-04", "comercial": -22.4, "passeio": -44.7}, {"mes": "2020-05", "comercial": -13.6, "passeio": -29.9}, {"mes": "2020-06", "comercial": -1.9, "passeio": -25.4}, {"mes": "2020-07", "comercial": 1.1, "passeio": -24.8}, {"mes": "2020-08", "comercial": 2.1, "passeio": -9.6}, {"mes": "2020-09", "comercial": 6.9, "passeio": -0.8}, {"mes": "2020-10", "comercial": 4.1, "passeio": 4.4}, {"mes": "2020-11", "comercial": 7.6, "passeio": -2.3}, {"mes": "2020-12", "comercial": 10.5, "passeio": -6.0}, {"mes": "2021-01", "comercial": 10.2, "passeio": -1.5}, {"mes": "2021-02", "comercial": 10.3, "passeio": 6.4}, {"mes": "2021-03", "comercial": 16.1, "passeio": -23.1}, {"mes": "2021-04", "comercial": 8.5, "passeio": -15.0}, {"mes": "2021-05", "comercial": 11.8, "passeio": -0.3}, {"mes": "2021-06", "comercial": 14.0, "passeio": -5.6}, {"mes": "2021-07", "comercial": 11.6, "passeio": -4.5}, {"mes": "2021-08", "comercial": 11.6, "passeio": -0.7}, {"mes": "2021-09", "comercial": 8.2, "passeio": 1.1}, {"mes": "2021-10", "comercial": 4.7, "passeio": 1.0}, {"mes": "2021-11", "comercial": 8.3, "passeio": -2.4}, {"mes": "2021-12", "comercial": 14.6, "passeio": -0.4}], "participacao": [{"mes": "2019-01", "comercial": 29.0}, {"mes": "2019-02", "comercial": 34.9}, {"mes": "2019-03", "comercial": 32.4}, {"mes": "2019-04", "comercial": 33.8}, {"mes": "2019-05", "comercial": 35.6}, {"mes": "2019-06", "comercial": 33.4}, {"mes": "2019-07", "comercial": 32.9}, {"mes": "2019-08", "comercial": 35.5}, {"mes": "2019-09", "comercial": 35.2}, {"mes": "2019-10", "comercial": 35.4}, {"mes": "2019-11", "comercial": 33.9}, {"mes": "2019-12", "comercial": 28.4}, {"mes": "2020-01", "comercial": 28.4}, {"mes": "2020-02", "comercial": 32.1}, {"mes": "2020-03", "comercial": 39.4}, {"mes": "2020-04", "comercial": 41.5}, {"mes": "2020-05", "comercial": 40.3}, {"mes": "2020-06", "comercial": 39.7}, {"mes": "2020-07", "comercial": 39.5}, {"mes": "2020-08", "comercial": 38.3}, {"mes": "2020-09", "comercial": 36.9}, {"mes": "2020-10", "comercial": 35.4}, {"mes": "2020-11", "comercial": 36.1}, {"mes": "2020-12", "comercial": 31.8}, {"mes": "2021-01", "comercial": 31.3}, {"mes": "2021-02", "comercial": 35.8}, {"mes": "2021-03", "comercial": 41.9}, {"mes": "2021-04", "comercial": 39.3}, {"mes": "2021-05", "comercial": 38.3}, {"mes": "2021-06", "comercial": 37.8}, {"mes": "2021-07", "comercial": 36.4}, {"mes": "2021-08", "comercial": 38.3}, {"mes": "2021-09", "comercial": 36.7}, {"mes": "2021-10", "comercial": 36.4}, {"mes": "2021-11", "comercial": 36.2}, {"mes": "2021-12", "comercial": 31.4}], "concessionarias": [{"nome": "Concer", "rodovia": "BR-040 · RJ/MG", "pracas": 3, "com20": -6.5, "pas20": -19.7, "com21": -0.3, "pas21": -6.3, "part_com21": 20.8}, {"nome": "Ecosul", "rodovia": "BR-116/392 · RS", "pracas": 5, "com20": -3.4, "pas20": -19.0, "com21": 13.6, "pas21": -2.2, "part_com21": 42.2}, {"nome": "Ecoponte", "rodovia": "Ponte Rio-Niterói · RJ", "pracas": 1, "com20": -18.6, "pas20": -17.4, "com21": 33.9, "pas21": -6.3, "part_com21": 9.7}, {"nome": "Rodovia do Aço", "rodovia": "BR-393 · RJ", "pracas": 3, "com20": -3.8, "pas20": -16.9, "com21": 2.6, "pas21": -8.0, "part_com21": 44.0}, {"nome": "NovaDutra", "rodovia": "BR-116 · SP/RJ", "pracas": 8, "com20": -4.3, "pas20": -16.3, "com21": 4.3, "pas21": -5.1, "part_com21": 32.4}, {"nome": "Concebra", "rodovia": "BR-060/153/262 · DF/GO/MG", "pracas": 11, "com20": 3.4, "pas20": -14.4, "com21": 10.0, "pas21": -8.7, "part_com21": 36.2}, {"nome": "Fernão Dias", "rodovia": "BR-381 · MG/SP", "pracas": 9, "com20": 1.6, "pas20": -13.0, "com21": 13.1, "pas21": -6.0, "part_com21": 41.1}, {"nome": "Eco050", "rodovia": "BR-050 · GO/MG", "pracas": 2, "com20": 9.0, "pas20": -12.7, "com21": 16.8, "pas21": -3.6, "part_com21": 40.3}, {"nome": "Transbrasiliana", "rodovia": "BR-153 · SP", "pracas": 4, "com20": 2.4, "pas20": -11.6, "com21": 4.1, "pas21": -12.6, "part_com21": 35.8}, {"nome": "Autopista Fluminense", "rodovia": "BR-101 · RJ", "pracas": 5, "com20": 0.2, "pas20": -11.5, "com21": 13.3, "pas21": -2.8, "part_com21": 23.8}, {"nome": "CRT", "rodovia": "BR-116 · RJ", "pracas": 3, "com20": -21.8, "pas20": -11.5, "com21": -15.2, "pas21": 1.3, "part_com21": 24.1}, {"nome": "Via 040", "rodovia": "BR-040 · DF/GO/MG", "pracas": 11, "com20": 1.9, "pas20": -10.9, "com21": 12.3, "pas21": -5.0, "part_com21": 39.5}, {"nome": "Via Bahia", "rodovia": "BR-116/324 · BA", "pracas": 7, "com20": -1.8, "pas20": -10.9, "com21": 3.6, "pas21": -10.5, "part_com21": 40.3}, {"nome": "MSVia", "rodovia": "BR-163 · MS", "pracas": 9, "com20": 1.9, "pas20": -10.1, "com21": 14.7, "pas21": -4.1, "part_com21": 44.8}, {"nome": "Planalto Sul", "rodovia": "BR-116 · PR/SC", "pracas": 5, "com20": 1.9, "pas20": -9.6, "com21": 16.2, "pas21": -1.8, "part_com21": 40.1}, {"nome": "Litoral Sul", "rodovia": "BR-116/376/101 · PR/SC", "pracas": 5, "com20": 1.1, "pas20": -9.4, "com21": 12.7, "pas21": -3.7, "part_com21": 31.3}, {"nome": "Régis Bittencourt", "rodovia": "BR-116 · SP/PR", "pracas": 6, "com20": 0.0, "pas20": -8.4, "com21": 11.2, "pas21": -1.7, "part_com21": 55.7}, {"nome": "Eco101", "rodovia": "BR-101 · ES/BA", "pracas": 7, "com20": 3.7, "pas20": -7.7, "com21": 14.1, "pas21": 0.6, "part_com21": 35.8}, {"nome": "Rota do Oeste (CRO)", "rodovia": "BR-163 · MT", "pracas": 9, "com20": 1.9, "pas20": -5.8, "com21": 9.4, "pas21": 1.1, "part_com21": 58.9}, {"nome": "Via Sul", "rodovia": "BR-101/290/386 · RS", "pracas": 2, "com20": 23.1, "pas20": 12.4, "com21": 59.0, "pas21": 22.8, "part_com21": 18.8}], "pracas": [{"praca": "P5", "conc": "Rota do Oeste (CRO)", "rodovia": "BR-163 · MT", "part": 77.6, "comerciais_mi": 1.79}, {"praca": "Praça 7", "conc": "Via Bahia", "rodovia": "BR-116/324 · BA", "part": 70.7, "comerciais_mi": 1.8}, {"praca": "Praça 5", "conc": "Via Bahia", "rodovia": "BR-116/324 · BA", "part": 70.2, "comerciais_mi": 1.83}, {"praca": "Praça 4", "conc": "Via Bahia", "rodovia": "BR-116/324 · BA", "part": 68.6, "comerciais_mi": 1.99}, {"praca": "P5 PRATA", "conc": "Concebra", "rodovia": "BR-060/153/262 · DF/GO/MG", "part": 66.7, "comerciais_mi": 1.59}, {"praca": "P3", "conc": "Rota do Oeste (CRO)", "rodovia": "BR-163 · MT", "part": 66.4, "comerciais_mi": 2.05}, {"praca": "Barra do Turvo", "conc": "Régis Bittencourt", "rodovia": "BR-116 · SP/PR", "part": 64.4, "comerciais_mi": 4.88}, {"praca": "Praça 3", "conc": "Via Bahia", "rodovia": "BR-116/324 · BA", "part": 64.3, "comerciais_mi": 2.41}, {"praca": "Praça Glória", "conc": "Ecosul", "rodovia": "BR-116/392 · RS", "part": 63.1, "comerciais_mi": 0.86}, {"praca": "Praça 6", "conc": "Via Bahia", "rodovia": "BR-116/324 · BA", "part": 62.7, "comerciais_mi": 1.87}]};
+
+const $ = id => document.getElementById(id);
+const fmt = (v, c = 1) => v.toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c });
+const pct = (v, c = 1) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), c) + "%";
+const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const rotMes = m => MESES[+m.slice(5, 7) - 1] + "/" + m.slice(2, 4);
+const COR = { cam: "#0e7a4b", car: "#b88400" };
+const NS = "http://www.w3.org/2000/svg";
+
+function el(tag, attrs = {}, pai) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (pai) pai.appendChild(e);
+  return e;
+}
+function txt(pai, x, y, s, cls, extra = {}) { const t = el("text", { x, y, class: cls, ...extra }, pai); t.textContent = s; return t; }
+function escala(d0, d1, r0, r1) { return v => r0 + (v - d0) / (d1 - d0) * (r1 - r0); }
+function passoBom(max, n) { const p = Math.pow(10, Math.floor(Math.log10(max / n))); return [1, 2, 2.5, 5, 10].map(m => m * p).find(s => max / s <= n); }
+
+// tooltip compartilhada
+function dica(box) {
+  let d = box.querySelector(".dica");
+  if (!d) { d = document.createElement("div"); d.className = "dica"; box.appendChild(d); }
+  return {
+    mostrar(html, x, y) {
+      d.innerHTML = html; d.classList.add("on");
+      const w = d.offsetWidth, h = d.offsetHeight, W = box.clientWidth;
+      let left = x + 14; if (left + w > W) left = x - w - 14; if (left < 0) left = 0;
+      d.style.left = left + "px"; d.style.top = Math.max(0, y - h - 10) + "px";
+    },
+    esconder() { d.classList.remove("on"); }
+  };
+}
+const linhaDica = (cor, nome, valor) => `<div class="l"><span><i style="background:${cor}"></i>${nome}</span><span class="num">${valor}</span></div>`;
+
+// ---------- abertura e números ----------
+function abertura() {
+  const t = D.destaque;
+  $("t-total").textContent = fmt(t.total_veiculos_mi / 1000, 1) + " bilhão de";
+  $("t-pracas").textContent = D.sujeira.pracas_completas;
+  $("p-car").textContent = pct(t.abr_pas);
+  $("p-cam").textContent = pct(t.abr_com);
+  $("t-volta").textContent = { "2020-07": "julho de 2020" }[t.volta_comercial] || rotMes(t.volta_comercial);
+  const k = [
+    ["cam", "Caminhões em 2020", pct(t.ano20_com), "contra 2019: praticamente estável"],
+    ["car", "Carros em 2020", pct(t.ano20_pas), "contra 2019"],
+    ["cam", "Caminhões em 2021", pct(t.ano21_com), "acima do nível de 2019"],
+    ["car", "Carros em 2021", pct(t.ano21_pas), "ainda abaixo de 2019"],
+  ];
+  $("kpis").innerHTML = k.map(([c, r, v, d]) => `<div class="kpi"><div class="rot"><i style="background:${COR[c]}"></i>${r}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+  $("c-linhas").textContent = Object.values(D.sujeira.linhas).reduce((a, b) => a + b, 0).toLocaleString("pt-BR");
+  const s = D.sujeira;
+  const sj = [
+    [`<s>${s.categorias_brutas}</s> → ${s.categorias_trim}`, "Categorias com espaço sobrando", `“Categoria 2” e “Categoria 2 ” viravam linhas separadas num gráfico. Resolvido com <code>TRIM</code>.`],
+    [`<s>${s.nomes_conc_2021_brutos}</s> → ${s.nomes_conc_2021_limpos}`, "Concessionárias com dois nomes", `“CONCEBRA” e “Concebra” em 2021. O <code>UPPER</code> do SQLite não converte acentos, então “Fernão” precisou de <code>REPLACE</code>.`],
+    [s.linhas_diarias.toLocaleString("pt-BR"), "Linhas com data diária", `${s.concessionarias_dias.length} concessionárias passaram a informar por dia em 2021. Tudo foi somado por mês.`],
+    [`<s>${s.pracas_total}</s> → ${s.pracas_completas}`, "Praças na comparação", `Ficaram de fora as que abriram no meio do período e as que têm mês faltando. As ${s.pracas_completas} restantes somam ${fmt(s.cobertura_volume, 1)}% do tráfego.`],
+  ];
+  $("sujeiras").innerHTML = sj.map(([a, h, p]) => `<div class="suj"><div class="antes">${a}</div><h4>${h}</h4><p>${p}</p></div>`).join("");
+  // armadilha: soma por concessionária (20 concessionárias presentes nos 3 anos) x praça a praça
+  $("a-conc").textContent = pct(t.ano20_com_por_conc);
+  $("a-praca").textContent = pct(t.ano20_com);
+}
+
+// ---------- gráfico de linhas ----------
+function linhas(box, cfg) {
+  box.innerHTML = "";
+  const W = box.clientWidth, estreito = W < 560;
+  const H = cfg.altura || (estreito ? 260 : 340);
+  const m = { t: 16, r: estreito ? 64 : 92, b: 30, l: 44 };
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": cfg.aria }, box);
+  const n = cfg.x.length;
+  const x = i => m.l + i * (W - m.l - m.r) / (n - 1);
+  const todos = cfg.series.flatMap(s => s.v);
+  let lo = Math.min(0, ...todos), hi = Math.max(0, ...todos);
+  if (cfg.lo !== undefined) lo = cfg.lo; if (cfg.hi !== undefined) hi = cfg.hi;
+  const passo = passoBom(hi - lo, estreito ? 4 : 6);
+  lo = Math.floor(lo / passo) * passo; hi = Math.ceil(hi / passo) * passo;
+  const y = escala(lo, hi, H - m.b, m.t);
+  for (let v = lo; v <= hi + 1e-9; v += passo) {
+    el("line", { x1: m.l, x2: W - m.r + 6, y1: y(v), y2: y(v), class: Math.abs(v) < 1e-9 && cfg.zero ? "zero" : "grade" }, svg);
+    txt(svg, m.l - 8, y(v) + 4, cfg.fmtY(v), "eixo-t", { "text-anchor": "end" });
+  }
+  const passoX = (W - m.l - m.r) / (n - 1);
+  const pulo = [1, 2, 3, 4, 6, 12].find(k => k * passoX >= 56) || 12;
+  cfg.x.forEach((mm, i) => { if (i % pulo === 0) txt(svg, x(i), H - 8, rotMes(mm), "eixo-t", { "text-anchor": "middle" }); });
+  if (cfg.ref) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(cfg.ref.v), y2: y(cfg.ref.v), stroke: "#8a948e", "stroke-dasharray": "4 4", "stroke-width": 1.2 }, svg);
+    txt(svg, W - m.r + 8, y(cfg.ref.v) + 4, cfg.ref.rot, "anot-s");
+  }
+  (cfg.anot || []).forEach(a => {
+    const i = cfg.x.indexOf(a.mes); if (i < 0) return;
+    const yy = y(a.y);
+    el("line", { x1: x(i), x2: x(i), y1: yy + (a.dy > 0 ? 6 : -6), y2: yy + a.dy * .62, stroke: "#15201b", "stroke-width": 1 }, svg);
+    const anchor = a.ancora || "middle";
+    txt(svg, x(i) + (a.dx || 0), yy + a.dy, a.t, "anot", { "text-anchor": anchor });
+    if (a.s) txt(svg, x(i) + (a.dx || 0), yy + a.dy + 15, a.s, "anot-s", { "text-anchor": anchor });
+  });
+  cfg.series.forEach(s => {
+    const d = s.v.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join("");
+    el("path", { d, fill: "none", stroke: s.cor, "stroke-width": 2.4, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    const ult = s.v.length - 1;
+    el("circle", { cx: x(ult), cy: y(s.v[ult]), r: 4, fill: s.cor, stroke: "#fff", "stroke-width": 2 }, svg);
+    if (s.nome) txt(svg, x(ult) + 9, y(s.v[ult]) + 4 + (s.ajuste || 0), s.nome, "rotulo", { fill: "#15201b" });
+  });
+  // camada de hover
+  const guia = el("line", { y1: m.t, y2: H - m.b, stroke: "#15201b", "stroke-width": 1, opacity: 0 }, svg);
+  const pts = cfg.series.map(s => el("circle", { r: 5, fill: s.cor, stroke: "#fff", "stroke-width": 2, opacity: 0 }, svg));
+  const alvo = el("rect", { x: m.l, y: 0, width: W - m.l - m.r, height: H - m.b, fill: "transparent" }, svg);
+  const tt = dica(box);
+  const mover = ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+    const i = Math.max(0, Math.min(n - 1, Math.round((px - m.l) / ((W - m.l - m.r) / (n - 1)))));
+    guia.setAttribute("x1", x(i)); guia.setAttribute("x2", x(i)); guia.setAttribute("opacity", .35);
+    cfg.series.forEach((s, k) => { pts[k].setAttribute("cx", x(i)); pts[k].setAttribute("cy", y(s.v[i])); pts[k].setAttribute("opacity", 1); });
+    tt.mostrar(`<b>${cfg.rotTip(cfg.x[i])}</b>` + cfg.series.map(s => linhaDica(s.cor, s.tip || s.nome, cfg.fmtTip(s.v[i]))).join(""), x(i), Math.min(...cfg.series.map(s => y(s.v[i]))));
+  };
+  const sair = () => { guia.setAttribute("opacity", 0); pts.forEach(p => p.setAttribute("opacity", 0)); tt.esconder(); };
+  alvo.addEventListener("mousemove", mover); alvo.addEventListener("touchstart", mover, { passive: true });
+  alvo.addEventListener("touchmove", mover, { passive: true }); alvo.addEventListener("mouseleave", sair);
+}
+
+function nomeMesLongo(m) { return ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"][+m.slice(5,7)-1] + " de " + m.slice(0,4); }
+
+function termometro() {
+  const v = D.variacao, estreito = $("g-termometro").clientWidth < 560;
+  const abr = v.find(r => r.mes === "2020-04"), mar21 = v.find(r => r.mes === "2021-03");
+  linhas($("g-termometro"), {
+    aria: "Variação mensal de carros e caminhões contra o mesmo mês de 2019",
+    x: v.map(r => r.mes), zero: true,
+    series: [
+      { v: v.map(r => r.comercial), cor: COR.cam, nome: "Caminhões", ajuste: -4 },
+      { v: v.map(r => r.passeio), cor: COR.car, nome: "Carros", ajuste: 8 },
+    ],
+    fmtY: v => (v > 0 ? "+" : "") + v + "%", fmtTip: v => pct(v), rotTip: m => nomeMesLongo(m) + " contra 2019",
+    anot: estreito ? [] : [
+      { mes: "2020-04", y: abr.passeio, dy: 2, dx: 12, ancora: "start", t: "Abril de 2020", s: `carros ${pct(abr.passeio)} · caminhões ${pct(abr.comercial)}` },
+      { mes: "2021-03", y: mar21.passeio, dy: 4, dx: 12, ancora: "start", t: "Segunda onda", s: `carros ${pct(mar21.passeio)}` },
+    ],
+  });
+}
+
+function participacao() {
+  const p = D.participacao;
+  const media19 = p.filter(r => r.mes < "2020").reduce((a, r) => a + r.comercial, 0) / 12;
+  linhas($("g-participacao"), {
+    aria: "Participação dos caminhões no total de veículos, por mês", altura: 260,
+    x: p.map(r => r.mes), lo: 25, hi: 45,
+    series: [{ v: p.map(r => r.comercial), cor: COR.cam, tip: "Caminhões" }],
+    ref: { v: media19, rot: "média 2019" },
+    fmtY: v => v + "%", fmtTip: v => fmt(v) + " de cada 100", rotTip: nomeMesLongo,
+    anot: [{ mes: "2020-04", y: p.find(r => r.mes === "2020-04").comercial, dy: -12, t: fmt(p.find(r => r.mes === "2020-04").comercial) + "%" }],
+  });
+}
+
+// ---------- barras por ano ----------
+function anos() {
+  const box = $("g-anos"); box.innerHTML = "";
+  const W = box.clientWidth, H = 260, m = { t: 22, r: 8, b: 30, l: 8 };
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Total de passagens por ano" }, box);
+  const max = Math.max(...D.anos.flatMap(a => [a.comercial, a.passeio]));
+  const y = escala(0, max, H - m.b, m.t);
+  const grupo = (W - m.l - m.r) / D.anos.length, bw = Math.min(54, grupo * .3), gap = 2;
+  const tt = dica(box);
+  el("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: "zero" }, svg);
+  D.anos.forEach((a, i) => {
+    const cx = m.l + grupo * i + grupo / 2;
+    [["comercial", COR.cam, -1, "Caminhões"], ["passeio", COR.car, 1, "Carros"]].forEach(([k, cor, lado, nome]) => {
+      const x0 = lado < 0 ? cx - bw - gap / 2 : cx + gap / 2, top = y(a[k]), h = H - m.b - top;
+      el("path", { d: `M${x0} ${H - m.b}V${top + 4}Q${x0} ${top} ${x0 + 4} ${top}H${x0 + bw - 4}Q${x0 + bw} ${top} ${x0 + bw} ${top + 4}V${H - m.b}Z`, fill: cor }, svg);
+      txt(svg, x0 + bw / 2, top - 6, fmt(a[k], 0), "eixo-t", { "text-anchor": "middle", style: "fill:#15201b;font-weight:800" });
+      const hit = el("rect", { x: x0 - 3, y: m.t, width: bw + 6, height: H - m.b - m.t, fill: "transparent" }, svg);
+      hit.addEventListener("mouseenter", () => tt.mostrar(`<b>${nome} em ${a.ano}</b>${linhaDica(cor, "milhões", fmt(a[k]))}`, x0 + bw / 2, top));
+      hit.addEventListener("mouseleave", () => tt.esconder());
+    });
+    txt(svg, cx, H - 9, a.ano, "eixo-t", { "text-anchor": "middle", style: "font-size:13px;fill:#15201b;font-weight:800" });
+  });
+}
+
+// nome da concessionária em cima e rodovia embaixo, alinhados à direita
+function rotuloLinha(svg, x, cy, c, estreito) {
+  txt(svg, x, cy - 2, c.nome, "", { "text-anchor": "end", style: `font-size:${estreito ? 13 : 13.5}px;font-weight:800;fill:#15201b` });
+  txt(svg, x, cy + 13, estreito ? c.rodovia.split(" · ")[1] : c.rodovia, "anot-s", { "text-anchor": "end", style: "font-size:11.5px" });
+}
+
+// ---------- halteres por concessionária ----------
+function concessionarias() {
+  const box = $("g-conc"); box.innerHTML = "";
+  const lista = D.concessionarias.filter(c => c.nome !== "Via Sul");
+  const via = D.concessionarias.find(c => c.nome === "Via Sul");
+  $("n-conc").textContent = `A Via Sul (RS) fica fora do gráfico: só 2 praças estão nos três anos e elas cresceram fora da curva (caminhões ${pct(via.com20)}, carros ${pct(via.pas20)}), porque a concessão começou em 2019.`;
+  const W = box.clientWidth, estreito = W < 560, linha = 40;
+  const m = { t: 30, r: 16, b: 8, l: estreito ? 140 : 210 };
+  const H = m.t + linha * lista.length + m.b;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Variação de 2020 contra 2019 por concessionária" }, box);
+  const vals = lista.flatMap(c => [c.com20, c.pas20]);
+  const lo = Math.floor(Math.min(...vals) / 5) * 5, hi = Math.max(10, Math.ceil(Math.max(...vals) / 5) * 5);
+  const x = escala(lo, hi, m.l, W - m.r);
+  for (let v = lo; v <= hi; v += (estreito ? 10 : 5)) {
+    el("line", { x1: x(v), x2: x(v), y1: m.t - 6, y2: H - m.b, class: v === 0 ? "zero" : "grade" }, svg);
+    txt(svg, x(v), m.t - 12, (v > 0 ? "+" : "") + v + "%", "eixo-t", { "text-anchor": "middle" });
+  }
+  const tt = dica(box);
+  lista.forEach((c, i) => {
+    const cy = m.t + linha * i + linha / 2;
+    if (i % 2 === 0) el("rect", { x: 0, y: cy - linha / 2, width: W, height: linha, fill: "#f7f8f5", rx: 6 }, svg);
+    rotuloLinha(svg, m.l - 14, cy, c, estreito);
+    el("line", { x1: x(c.pas20), x2: x(c.com20), y1: cy, y2: cy, stroke: "#c3c9c4", "stroke-width": 3, "stroke-linecap": "round" }, svg);
+    el("circle", { cx: x(c.pas20), cy, r: 7, fill: COR.car, stroke: "#fff", "stroke-width": 2 }, svg);
+    el("circle", { cx: x(c.com20), cy, r: 7, fill: COR.cam, stroke: "#fff", "stroke-width": 2 }, svg);
+    const hit = el("rect", { x: 0, y: cy - linha / 2, width: W, height: linha, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", ev => {
+      const r = svg.getBoundingClientRect();
+      tt.mostrar(`<b>${c.nome} · ${c.rodovia}</b>${linhaDica(COR.cam, "Caminhões", pct(c.com20))}${linhaDica(COR.car, "Carros", pct(c.pas20))}<div class="l"><span>Praças na conta</span><span class="num">${c.pracas}</span></div>`, ev.clientX - r.left, cy - 4);
+    });
+    hit.addEventListener("mouseleave", () => tt.esconder());
+  });
+}
+
+// ---------- barras horizontais de participação ----------
+function participacaoConc() {
+  const box = $("g-part"); box.innerHTML = "";
+  const lista = [...D.concessionarias].sort((a, b) => b.part_com21 - a.part_com21);
+  const W = box.clientWidth, estreito = W < 560, linha = 38;
+  const m = { t: 6, r: 52, b: 22, l: estreito ? 140 : 210 };
+  const H = m.t + linha * lista.length + m.b;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Participação dos caminhões por concessionária em 2021" }, box);
+  const x = escala(0, 70, m.l, W - m.r);
+  const media = D.destaque.part_media_21;
+  const tt = dica(box);
+  lista.forEach((c, i) => {
+    const cy = m.t + linha * i + linha / 2, bh = 20, x1 = x(c.part_com21);
+    rotuloLinha(svg, m.l - 14, cy, c, estreito);
+    el("path", { d: `M${m.l} ${cy - bh / 2}H${x1 - 4}Q${x1} ${cy - bh / 2} ${x1} ${cy - bh / 2 + 4}V${cy + bh / 2 - 4}Q${x1} ${cy + bh / 2} ${x1 - 4} ${cy + bh / 2}H${m.l}Z`, fill: COR.cam, opacity: i < 3 ? 1 : .55 }, svg);
+    txt(svg, x1 + 7, cy + 4, fmt(c.part_com21) + "%", "", { style: "font-size:13px;font-weight:800;fill:#15201b" });
+    const hit = el("rect", { x: 0, y: cy - linha / 2, width: W, height: linha, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", ev => { const r = svg.getBoundingClientRect();
+      tt.mostrar(`<b>${c.nome} · ${c.rodovia}</b>${linhaDica(COR.cam, "Caminhões em 2021", fmt(c.part_com21) + "%")}`, ev.clientX - r.left, cy - 4); });
+    hit.addEventListener("mouseleave", () => tt.esconder());
+  });
+  el("line", { x1: x(media), x2: x(media), y1: m.t, y2: H - m.b, stroke: "#15201b", "stroke-dasharray": "4 4", "stroke-width": 1.2 }, svg);
+  txt(svg, x(media) + 6, H - 10, "média " + fmt(media) + "%", "anot-s");
+}
+
+function desenhar() { termometro(); participacao(); anos(); concessionarias(); participacaoConc(); }
+abertura(); desenhar();
+let tR; let larg = innerWidth;
+addEventListener("resize", () => { if (innerWidth === larg) return; larg = innerWidth; clearTimeout(tR); tR = setTimeout(desenhar, 120); });
+document.fonts && document.fonts.ready.then(desenhar);
+</script>
+</body>
+</html>

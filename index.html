@@ -174,7 +174,7 @@ section{padding:110px 0 0}
 .note{font-size:11px;color:#55554f;text-align:center;margin-top:12px}
 
 /* projects */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:22px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:22px}
 .proj{background:var(--s2);border:1px solid var(--line);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;transition:transform .3s,border-color .3s}
 .proj:hover{transform:translateY(-8px);border-color:#3a3f55}
 .ph{height:190px;position:relative;display:grid;place-items:center;overflow:hidden}
@@ -223,7 +223,7 @@ section{padding:110px 0 0}
 .pgrid{display:grid;grid-template-columns:1.15fr 1fr;gap:22px;margin-top:22px}
 .wip-h{font-size:12px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin-bottom:-6px}
 
-.ph.shot{display:block;width:100%;height:220px;padding:0;border:0;cursor:zoom-in;background:#0a1a4a;position:relative;overflow:hidden}
+.ph.shot{display:block;width:100%;height:auto;aspect-ratio:16/9;padding:0;border:0;cursor:zoom-in;background:#0a1a4a;position:relative;overflow:hidden}
 .ph.shot img{width:100%;height:100%;object-fit:cover;object-position:top left;transition:transform .6s}
 .proj:hover .ph.shot img{transform:scale(1.04)}
 .ph.shot:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(8,9,15,.7))}
@@ -581,6 +581,16 @@ footer .logo{color:var(--tx);font-size:22px}
         <div class="pb"><span class="num">03</span><h3>LUPA · Análise de Pedidos com SQL</h3><p>Oito perguntas de logística respondidas com SQL: onde o tempo é gasto, quais rotas atrasam, o impacto da postagem do vendedor e se o prazo prometido é realista. Cada resposta traz a consulta e uma recomendação.</p>
           <div class="tags"><span>SQL</span><span>CTEs</span><span>Funções de janela</span><span>Olist</span></div>
           <a class="go" href="https://erickkamorim.github.io/analise-pedidos-sql/" target="_blank" rel="noopener">Abrir o site <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a></div>
+      </article>
+      <article class="proj rv">
+        <a class="ph shot" href="https://erickkamorim.github.io/trafego-pedagios/" target="_blank" rel="noopener" aria-label="Abrir o EIXO, análise do tráfego nos pedágios">
+          <img src="assets/proj-eixo.webp" alt="EIXO: em abril de 2020 os carros caíram 44,7% nos pedágios e os caminhões 22,4%" loading="lazy">
+          <span class="st ok"><i></i>Publicado</span>
+          <span class="zoom"><svg class="i"><use href="#arrow"/></svg>Abrir o EIXO</span>
+        </a>
+        <div class="pb"><span class="num">04</span><h3>EIXO · Tráfego nos Pedágios</h3><p>1,9 bilhão de passagens pelos pedágios das rodovias federais (ANTT, 2019 a 2021) para testar se o caminhão é termômetro da economia. Na pandemia, os carros caíram 44,7% e os caminhões, metade disso. Inclui a limpeza da base pública e a armadilha que quase gerou uma conclusão errada.</p>
+          <div class="tags"><span>SQL</span><span>Python</span><span>Limpeza de dados</span><span>ANTT</span></div>
+          <a class="go" href="https://erickkamorim.github.io/trafego-pedagios/" target="_blank" rel="noopener">Abrir o site <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a></div>
       </article>
     </div>
   </section>
