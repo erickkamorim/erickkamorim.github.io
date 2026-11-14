@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUPA — Análise de Pedidos com SQL | Erick Amorim</title>
+<meta name="description" content="LUPA: oito perguntas de logística respondidas com SQL sobre 95 mil pedidos reais da Olist.">
+<meta name="theme-color" content="#08070d">
+<meta property="og:title" content="LUPA — Análise de Pedidos com SQL">
+<meta property="og:description" content="Oito perguntas de logística respondidas com SQL sobre 95 mil pedidos reais da Olist.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08070d;--s1:#100e17;--s2:#17141f;--line:#241f30;--tx:#f3f1f7;--mut:#9b96a8;--mut2:#6c6779;--acc:#b49bff;--accd:rgba(180,155,255,.12);--ink:#120a24}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+html,body{overflow-x:hidden}
+body{background:var(--bg);color:var(--tx);font-family:Manrope,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1px);background-size:24px 24px}
+a{color:inherit;text-decoration:none}
+svg.i{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.side{position:fixed;left:0;top:0;bottom:0;width:240px;background:#0b0a11;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;z-index:30;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:12px;padding:0 6px 22px}
+.lg{width:44px;height:44px;border-radius:14px;background:var(--acc);display:grid;place-items:center;color:var(--ink)}
+.lg svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+.brand b{display:block;font-family:Unbounded;font-size:18px;letter-spacing:.02em}
+.brand span{font-size:12px;color:var(--mut);font-weight:600}
+.nlab{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--mut2);padding:8px 10px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;font-weight:700;font-size:14.5px;color:#c9c4d4;margin-bottom:2px;transition:background .2s,color .2s}
+.nav a:hover{background:var(--s2);color:#fff}
+.nav a.on{background:var(--acc);color:var(--ink)}
+.sfoot{margin-top:auto;background:var(--s2);border:1px solid var(--line);border-radius:16px;padding:14px;font-size:12px;color:var(--mut)}
+.sfoot b{display:flex;align-items:center;gap:8px;color:var(--tx);font-size:13px;margin-bottom:4px}
+.sfoot b i{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
+.sfoot a{display:inline-flex;align-items:center;gap:6px;margin-top:10px;color:var(--acc);font-weight:800}
+main{margin-left:240px;padding:0 34px 90px}
+.wrap{max-width:980px;margin:0 auto}
+.hero{padding:44px 0 10px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--accd);color:var(--acc);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:7px 12px;border-radius:99px}
+.hero h1{font-family:Unbounded;font-size:clamp(30px,4.4vw,50px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:16px 0 12px}
+.hero h1 span{color:var(--acc)}
+.hero p{color:var(--mut);font-size:16px;max-width:720px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.tags span{font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:10px;border:1px solid #2f2840;color:#d5cfe2;font-family:"JetBrains Mono",monospace}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px}
+.stats div{background:var(--s1);border:1px solid var(--line);border-radius:22px;padding:18px}
+.stats b{display:block;font-family:Unbounded;font-size:24px;font-weight:700;letter-spacing:-.03em}
+.stats span{font-size:13px;color:var(--mut);font-weight:600}
+.stats div:first-child{background:linear-gradient(140deg,#d2c3ff,var(--acc));border-color:var(--acc);color:var(--ink)}
+.stats div:first-child span{color:rgba(18,10,36,.7)}
+.idx{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+.idx a{display:flex;align-items:center;gap:12px;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-weight:700;font-size:14px;transition:border-color .2s,transform .2s}
+.idx a:hover{border-color:var(--acc);transform:translateY(-2px)}
+.idx a span{font-family:"JetBrains Mono",monospace;color:var(--acc);font-size:13px}
+.idx a em{margin-left:auto;font-style:normal;font-size:12px;color:var(--mut);font-weight:700;white-space:nowrap;padding-left:8px}
+section.blk{padding-top:56px}
+.bh{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.bic{width:44px;height:44px;border-radius:14px;background:var(--accd);color:var(--acc);display:grid;place-items:center}
+.bh h2{font-family:Unbounded;font-size:24px;font-weight:700;letter-spacing:-.02em}
+.bh p{color:var(--mut);font-size:14px}
+.q{background:var(--s1);border:1px solid var(--line);border-radius:26px;padding:26px;margin-bottom:16px;scroll-margin-top:24px}
+.qh{display:flex;gap:16px;align-items:flex-start}
+.qn{font-family:Unbounded;font-size:15px;font-weight:700;color:var(--ink);background:var(--acc);border-radius:12px;padding:7px 10px;line-height:1}
+.q h3{font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
+.ans{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+.ins{color:#ddd8e8;margin:16px 0 18px;font-size:15.5px;padding:14px 16px;background:var(--accd);border-radius:16px;border:1px solid rgba(180,155,255,.22)}
+.bars{display:grid;gap:9px}
+.br{display:grid;grid-template-columns:190px 1fr 74px;gap:12px;align-items:center;font-size:13.5px}
+.bl{color:var(--mut);font-weight:600;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt{height:16px;background:#1b1724;border-radius:5px;overflow:hidden}
+.bt i{display:block;height:100%;background:#4a4260;border-radius:5px}
+.br.hi .bt i{background:var(--acc)}
+.br.hi .bl{color:var(--tx);font-weight:800}
+.bv{font-weight:800}
+.cols{display:flex;align-items:flex-end;gap:5px;height:190px;padding-top:24px}
+.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative;min-width:0}
+.col i{display:block;background:#4a4260;border-radius:4px 4px 0 0}
+.col.hi i{background:var(--acc)}
+.col em{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--mut2);font-weight:600;white-space:nowrap}
+.col .cv{display:block;text-align:center;font-size:12px;font-weight:800;white-space:nowrap;margin-bottom:4px;min-height:0}
+.cap{font-size:12.5px;color:var(--mut2);margin-top:30px}
+.kp{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.kp div{background:var(--s2);border:1px solid var(--line);border-radius:16px;padding:14px}
+.kp b{display:block;font-family:Unbounded;font-size:19px;font-weight:700}
+.kp span{font-size:12px;color:var(--mut);font-weight:600}
+.tg{margin-top:18px;display:grid;gap:8px}
+details summary{cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--acc);list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary svg{width:16px;height:16px}
+.tw{overflow-x:auto;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:700;font-size:12.5px}
+pre{margin-top:10px;background:#07060b;border:1px solid var(--line);border-radius:16px;padding:16px;overflow-x:auto;font:13px/1.65 "JetBrains Mono",monospace;color:#dcd7e6}
+pre b{color:var(--acc);font-weight:500} pre i.cm{color:#5f5a6e;font-style:normal} pre i.st{color:#7ee0b5;font-style:normal}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:26px;padding:26px}
+.card p{color:var(--mut);font-size:15px}
+.rec{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rc{background:var(--s1);border:1px solid var(--line);border-radius:22px;padding:22px}
+.rc .n{font-family:Unbounded;font-size:13px;color:var(--acc)}
+.rc b{display:block;font-size:17px;margin:8px 0 6px}
+.rc p{color:var(--mut);font-size:14.5px}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:14px;padding:12px 18px;border-radius:14px;margin:16px 8px 0 0}
+.btn.pri{background:var(--acc);color:var(--ink)}
+.btn.out{border:1px solid #352d48}
+.btn.out:hover{border-color:var(--acc);color:var(--acc)}
+footer{margin-top:50px;padding-top:22px;border-top:1px solid var(--line);color:var(--mut2);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+footer a{color:var(--mut)}
+.mbrand{display:none;align-items:center;gap:10px;padding:18px 0 0}
+.mbrand .lg{width:38px;height:38px;border-radius:12px}
+.mbrand b{font-family:Unbounded;font-size:16px}
+.mnav{display:none}
+@media (max-width:900px){.stats{grid-template-columns:1fr 1fr}.kp{grid-template-columns:repeat(2,1fr)}.idx,.rec{grid-template-columns:1fr}.br{grid-template-columns:120px 1fr 64px}}
+@media (max-width:860px){
+  .side{display:none} main{margin-left:0;padding:0 18px 110px} .mbrand{display:flex}
+  .mnav{display:flex;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;background:rgba(23,20,31,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:99px;padding:6px;gap:2px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+  .mnav a{display:grid;place-items:center;width:44px;height:44px;border-radius:99px;color:var(--mut)}
+  .mnav a.on{background:var(--acc);color:var(--ink)}
+  .q{padding:20px}.q h3{font-size:18px}
+}
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="brand"><div class="lg"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg></div><div><b>LUPA</b><span>Análise de Pedidos · SQL</span></div></div>
+  <div class="nlab">ANÁLISE</div>
+  <nav class="nav"><a href="#resumo" class="on"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Resumo</a><a href="#base"><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>A base</a><a href="#op"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Operação</a><a href="#gar"><svg class="i" viewBox="0 0 24 24"><path d="M4 18h5v-5h5V8h6"/></svg>Gargalos</a><a href="#reg"><svg class="i" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Regiões</a><a href="#cli"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>Cliente</a><a href="#pro"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Promessa</a><a href="#recomendacoes"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg>Recomendações</a><a href="#script"><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Script</a></nav>
+  <div class="sfoot"><b><i></i>Dados públicos</b>Olist · 95.105 pedidos entregues · 2016 a 2018<br><a href="https://erickkamorim.github.io/"><svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M15 6l-6 6 6 6"/></svg>Portfólio do Erick</a></div>
+</aside>
+
+<main><div class="wrap">
+  <div class="mbrand"><div class="lg"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg></div><b>LUPA</b></div>
+
+  <section class="hero" id="resumo">
+    <span class="chip">Projeto · SQL</span>
+    <h1>Oito perguntas de logística, <span>respondidas com SQL</span>.</h1>
+    <p>Análise de cerca de 95 mil pedidos reais de um e-commerce brasileiro (Olist, 2016–2018). Cada pergunta traz a resposta em uma frase, o gráfico, a tabela e a consulta usada.</p>
+    <div class="tags"><span>SQLite</span><span>CTE</span><span>RANK() OVER</span><span>SUM() OVER</span><span>CASE</span><span>JULIANDAY</span><span>7 tabelas</span></div>
+    <div class="stats">
+      <div><b>93,2%</b><span>entregues no prazo</span></div>
+      <div><b>74%</b><span>do lead time é transporte</span></div>
+      <div><b>3,9x</b><span>mais atraso com postagem fora do limite</span></div>
+      <div><b>4,28 → 1,69</b><span>nota: no prazo vs. 7+ dias de atraso</span></div>
+    </div>
+    <div class="idx"><a href="#q1"><span>01</span>Como está a operação no geral?<em>93,2% no prazo</em></a><a href="#q2"><span>02</span>Em quais meses o nível de serviço caiu?<em>Black Friday e fev–mar/18</em></a><a href="#q3"><span>03</span>Onde o tempo de entrega é gasto?<em>74% é transporte</em></a><a href="#q5"><span>04</span>Quando o vendedor posta depois do limite, o atraso aumenta?<em>3,9x mais atraso</em></a><a href="#q7"><span>05</span>Quais rotas mais atrasam?<em>SP → RJ lidera</em></a><a href="#q4"><span>06</span>Quais estados recebem com mais atraso?<em>Nordeste no topo</em></a><a href="#q6"><span>07</span>O atraso derruba a satisfação do cliente?<em>4,28 → 1,69</em></a><a href="#q8"><span>08</span>O prazo prometido é realista?<em>Folga demais</em></a></div>
+  </section>
+
+  <section class="blk" id="base">
+    <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div><div><h2>A base</h2><p>Uma view com o que importa de cada entrega</p></div></div>
+    <div class="card"><p>Pedidos com status "entregue" e todas as datas preenchidas, já com a duração de cada etapa (aprovação, postagem e transporte) e a marcação de entrega no prazo. Registros com postagem anterior à aprovação foram descartados. Todas as perguntas partem desta view.</p>
+      <details style="margin-top:14px"><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Ver a view em SQL</summary><pre><code><b>CREATE VIEW</b> vw_entregas <b>AS</b>
+<b>SELECT</b>
+    o.order_id,
+    c.customer_state                                   <b>AS</b> uf_cliente,
+    <b>DATE</b>(o.order_purchase_timestamp)                   <b>AS</b> data_compra,
+    <b>STRFTIME</b>(<i class="st">&#x27;%Y-%m&#x27;</i>, o.order_purchase_timestamp)      <b>AS</b> mes,
+    <b>JULIANDAY</b>(o.order_approved_at)            - <b>JULIANDAY</b>(o.order_purchase_timestamp)     <b>AS</b> dias_aprovacao,
+    <b>JULIANDAY</b>(o.order_delivered_carrier_date) - <b>JULIANDAY</b>(o.order_approved_at)            <b>AS</b> dias_postagem,
+    <b>JULIANDAY</b>(o.order_delivered_customer_date)- <b>JULIANDAY</b>(o.order_delivered_carrier_date) <b>AS</b> dias_transporte,
+    <b>JULIANDAY</b>(o.order_delivered_customer_date)- <b>JULIANDAY</b>(o.order_purchase_timestamp)     <b>AS</b> lead_time,
+    <b>JULIANDAY</b>(<b>DATE</b>(o.order_delivered_customer_date)) - <b>JULIANDAY</b>(<b>DATE</b>(o.order_estimated_delivery_date)) <b>AS</b> dias_vs_prazo,
+    <b>CASE</b> <b>WHEN</b> <b>DATE</b>(o.order_delivered_customer_date) &lt;= <b>DATE</b>(o.order_estimated_delivery_date)
+         <b>THEN</b> 1 <b>ELSE</b> 0 <b>END</b>                             <b>AS</b> no_prazo
+<b>FROM</b> orders o
+<b>JOIN</b> customers c <b>ON</b> c.customer_id = o.customer_id
+<b>WHERE</b> o.order_status = <i class="st">&#x27;delivered&#x27;</i>
+  <b>AND</b> o.order_approved_at              <b>IS NOT NULL</b>
+  <b>AND</b> o.order_delivered_carrier_date   <b>IS NOT NULL</b>
+  <b>AND</b> o.order_delivered_customer_date  <b>IS NOT NULL</b>
+  <b>AND</b> o.order_estimated_delivery_date  <b>IS NOT NULL</b>
+  <b>AND</b> o.order_delivered_carrier_date  &gt;= o.order_approved_at;   <i class="cm">-- descarta registros com datas invertidas</i></code></pre></details></div>
+  </section>
+
+  <section class="blk" id="op">
+  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div><div><h2>Operação</h2><p>Como a operação se comporta</p></div></div>
+  <article class="q" id="q1">
+  <div class="qh"><span class="qn">01</span><div><h3>Como está a operação no geral?</h3><span class="ans">93,2% no prazo</span></div></div>
+  <p class="ins">93,2% dos pedidos chegam no prazo, com lead time médio de 12,6 dias. Mas quem atrasa atrasa muito: 10,6 dias em média.</p>
+  <div class="kp"><div><b>95.105</b><span>pedidos entregues</span></div><div><b>93,2%</b><span>no prazo</span></div><div><b>12,6 d</b><span>lead time médio</span></div><div><b>10,6 d</b><span>atraso médio dos atrasados</span></div><div><b>13,5 d</b><span>folga média de quem chega antes</span></div></div>
+  <div class="tg"><details><summary><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Tabela de resultado</summary><div class="tw"><table><thead><tr><th>Pedidos entregues</th><th>% no prazo</th><th>Lead time médio (dias)</th><th>Atraso médio dos atrasados (dias)</th><th>Folga média dos no prazo (dias)</th></tr></thead><tbody><tr><td>95.105</td><td>93,2</td><td>12,6</td><td>10,6</td><td>13,5</td></tr></tbody></table></div></details>
+  <details><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Consulta SQL</summary><pre><code><b>SELECT</b>
+    <b>COUNT</b>(*)                                          <b>AS</b> pedidos_entregues,
+    <b>ROUND</b>(100.0 * <b>AVG</b>(no_prazo), 1)                   <b>AS</b> pct_no_prazo,
+    <b>ROUND</b>(<b>AVG</b>(lead_time), 1)                          <b>AS</b> lead_time_medio_dias,
+    <b>ROUND</b>(<b>AVG</b>(<b>CASE</b> <b>WHEN</b> no_prazo = 0 <b>THEN</b> dias_vs_prazo <b>END</b>), 1) <b>AS</b> atraso_medio_dos_atrasados,
+    <b>ROUND</b>(<b>AVG</b>(<b>CASE</b> <b>WHEN</b> no_prazo = 1 <b>THEN</b> -dias_vs_prazo <b>END</b>), 1) <b>AS</b> folga_media_dos_no_prazo
+<b>FROM</b> vw_entregas</code></pre></details></div>
+</article><article class="q" id="q2">
+  <div class="qh"><span class="qn">02</span><div><h3>Em quais meses o nível de serviço caiu?</h3><span class="ans">Black Friday e fev–mar/18</span></div></div>
+  <p class="ins">Duas quedas claras: nov/2017 (87,6% no prazo), no pico da Black Friday, e fev–mar/2018, quando chegou a 81%. Depois a operação se recuperou e o lead time caiu para menos de 10 dias.</p>
+  <div class="cols"><div class="col" title="jan/17: 97,1%"><i style="height:87.9%"></i><em>jan/17</em></div><div class="col" title="fev/17: 97,0%"><i style="height:87.5%"></i><em></em></div><div class="col" title="mar/17: 95,4%"><i style="height:80.8%"></i><em></em></div><div class="col" title="abr/17: 93,4%"><i style="height:72.5%"></i><em>abr/17</em></div><div class="col" title="mai/17: 97,0%"><i style="height:87.5%"></i><em></em></div><div class="col" title="jun/17: 97,0%"><i style="height:87.5%"></i><em></em></div><div class="col" title="jul/17: 97,2%"><i style="height:88.3%"></i><em>jul/17</em></div><div class="col" title="ago/17: 97,1%"><i style="height:87.9%"></i><em></em></div><div class="col" title="set/17: 95,6%"><i style="height:81.7%"></i><em></em></div><div class="col" title="out/17: 95,8%"><i style="height:82.5%"></i><em>out/17</em></div><div class="col" title="nov/17: 87,6%"><i style="height:48.3%"></i><em></em></div><div class="col" title="dez/17: 92,6%"><i style="height:69.2%"></i><em></em></div><div class="col" title="jan/18: 94,3%"><i style="height:76.2%"></i><em>jan/18</em></div><div class="col" title="fev/18: 85,8%"><i style="height:40.8%"></i><em></em></div><div class="col hi" title="mar/18: 81,0%"><span class="cv">81,0%</span><i style="height:20.8%"></i><em></em></div><div class="col" title="abr/18: 95,3%"><i style="height:80.4%"></i><em>abr/18</em></div><div class="col" title="mai/18: 93,4%"><i style="height:72.5%"></i><em></em></div><div class="col" title="jun/18: 98,8%"><i style="height:95.0%"></i><em></em></div><div class="col" title="jul/18: 96,4%"><i style="height:85.0%"></i><em>jul/18</em></div><div class="col" title="ago/18: 93,8%"><i style="height:74.2%"></i><em>ago/18</em></div></div><p class="cap">% no prazo por mês (escala começa em 76%). Em destaque, o pior mês.</p>
+  <div class="tg"><details><summary><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Tabela de resultado</summary><div class="tw"><table><thead><tr><th>Mês</th><th>Pedidos</th><th>% no prazo</th><th>Lead time (dias)</th></tr></thead><tbody><tr><td>jan/17</td><td>748</td><td>97,1</td><td>12,6</td></tr><tr><td>fev/17</td><td>1.640</td><td>97,0</td><td>13,2</td></tr><tr><td>mar/17</td><td>2.546</td><td>95,4</td><td>13,0</td></tr><tr><td>abr/17</td><td>2.279</td><td>93,4</td><td>14,9</td></tr><tr><td>mai/17</td><td>3.531</td><td>97,0</td><td>11,3</td></tr><tr><td>jun/17</td><td>3.131</td><td>97,0</td><td>12,0</td></tr><tr><td>jul/17</td><td>3.852</td><td>97,2</td><td>11,6</td></tr><tr><td>ago/17</td><td>4.192</td><td>97,1</td><td>11,1</td></tr><tr><td>set/17</td><td>4.136</td><td>95,6</td><td>11,8</td></tr><tr><td>out/17</td><td>4.478</td><td>95,8</td><td>11,9</td></tr><tr><td>nov/17</td><td>7.287</td><td>87,6</td><td>15,2</td></tr><tr><td>dez/17</td><td>5.508</td><td>92,6</td><td>15,4</td></tr><tr><td>jan/18</td><td>7.045</td><td>94,3</td><td>14,1</td></tr><tr><td>fev/18</td><td>6.543</td><td>85,8</td><td>17,0</td></tr><tr><td>mar/18</td><td>7.001</td><td>81,0</td><td>16,3</td></tr><tr><td>abr/18</td><td>6.409</td><td>95,3</td><td>11,6</td></tr><tr><td>mai/18</td><td>6.681</td><td>93,4</td><td>11,4</td></tr><tr><td>jun/18</td><td>5.973</td><td>98,8</td><td>9,3</td></tr><tr><td>jul/18</td><td>5.593</td><td>96,4</td><td>9,2</td></tr><tr><td>ago/18</td><td>6.265</td><td>93,8</td><td>7,7</td></tr></tbody></table></div></details>
+  <details><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Consulta SQL</summary><pre><code><b>SELECT</b>
+    mes,
+    <b>COUNT</b>(*)                         <b>AS</b> pedidos,
+    <b>ROUND</b>(100.0 * <b>AVG</b>(no_prazo), 1)  <b>AS</b> pct_no_prazo,
+    <b>ROUND</b>(<b>AVG</b>(lead_time), 1)         <b>AS</b> lead_time_medio
+<b>FROM</b> vw_entregas
+<b>GROUP BY</b> mes
+<b>HAVING</b> <b>COUNT</b>(*) &gt;= 500
+<b>ORDER BY</b> mes</code></pre></details></div>
+</article>
+</section><section class="blk" id="gar">
+  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M4 18h5v-5h5V8h6"/></svg></div><div><h2>Gargalos</h2><p>Onde o atraso nasce</p></div></div>
+  <article class="q" id="q3">
+  <div class="qh"><span class="qn">03</span><div><h3>Onde o tempo de entrega é gasto?</h3><span class="ans">74% é transporte</span></div></div>
+  <p class="ins">O transporte consome 9,4 dos 12,7 dias, cerca de 74% do lead time. É ali que está a maior alavanca, mais do que na aprovação do pagamento ou na postagem.</p>
+  <div class="bars"><div class="br"><span class="bl">Aprovação do pagamento</span><span class="bt"><i style="width:3.9%"></i></span><span class="bv">0,4 dias</span></div><div class="br"><span class="bl">Vendedor até a transportadora</span><span class="bt"><i style="width:28.6%"></i></span><span class="bv">2,9 dias</span></div><div class="br hi"><span class="bl">Transporte até o cliente</span><span class="bt"><i style="width:92.6%"></i></span><span class="bv">9,4 dias</span></div></div>
+  <div class="tg"><details><summary><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Tabela de resultado</summary><div class="tw"><table><thead><tr><th>Etapa</th><th>Dias médios</th></tr></thead><tbody><tr><td>Aprovação do pagamento</td><td>0,4</td></tr><tr><td>Vendedor até a transportadora</td><td>2,9</td></tr><tr><td>Transporte até o cliente</td><td>9,4</td></tr></tbody></table></div></details>
+  <details><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Consulta SQL</summary><pre><code><b>SELECT</b> <i class="st">&#x27;Aprovação do pagamento&#x27;</i> <b>AS</b> etapa, <b>ROUND</b>(<b>AVG</b>(dias_aprovacao), 1) <b>AS</b> dias_medios <b>FROM</b> vw_entregas
+<b>UNION ALL</b>
+<b>SELECT</b> <i class="st">&#x27;Vendedor até a transportadora&#x27;</i>, <b>ROUND</b>(<b>AVG</b>(dias_postagem), 1) <b>FROM</b> vw_entregas
+<b>UNION ALL</b>
+<b>SELECT</b> <i class="st">&#x27;Transporte até o cliente&#x27;</i>, <b>ROUND</b>(<b>AVG</b>(dias_transporte), 1) <b>FROM</b> vw_entregas</code></pre></details></div>
+</article><article class="q" id="q5">
+  <div class="qh"><span class="qn">04</span><div><h3>Quando o vendedor posta depois do limite, o atraso aumenta?</h3><span class="ans">3,9x mais atraso</span></div></div>
+  <p class="ins">Sim: 20,8% de atraso contra 5,4% de quem posta dentro do limite, quase 4 vezes mais. Só 9,2% dos pedidos estão nesse grupo, então é um problema pequeno e fácil de atacar.</p>
+  <div class="bars"><div class="br hi"><span class="bl">Postou depois do limite</span><span class="bt"><i style="width:92.6%"></i></span><span class="bv">20,8%</span></div><div class="br"><span class="bl">Postou dentro do limite</span><span class="bt"><i style="width:24.0%"></i></span><span class="bv">5,4%</span></div></div>
+  <div class="tg"><details><summary><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Tabela de resultado</summary><div class="tw"><table><thead><tr><th>Postagem</th><th>Pedidos</th><th>% dos pedidos</th><th>% entregue com atraso</th></tr></thead><tbody><tr><td>Postou depois do limite</td><td>8.715</td><td>9,2</td><td>20,8</td></tr><tr><td>Postou dentro do limite</td><td>86.390</td><td>90,8</td><td>5,4</td></tr></tbody></table></div></details>
+  <details><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Consulta SQL</summary><pre><code><b>WITH</b> limite <b>AS</b> (
+    <b>SELECT</b> order_id, <b>MIN</b>(shipping_limit_date) <b>AS</b> limite_postagem
+    <b>FROM</b> order_items
+    <b>GROUP BY</b> order_id
+)
+<b>SELECT</b>
+    <b>CASE</b> <b>WHEN</b> o.order_delivered_carrier_date &gt; l.limite_postagem
+         <b>THEN</b> <i class="st">&#x27;Postou depois do limite&#x27;</i> <b>ELSE</b> <i class="st">&#x27;Postou dentro do limite&#x27;</i> <b>END</b> <b>AS</b> postagem,
+    <b>COUNT</b>(*)                                     <b>AS</b> pedidos,
+    <b>ROUND</b>(100.0 * <b>COUNT</b>(*) / <b>SUM</b>(<b>COUNT</b>(*)) <b>OVER</b> (), 1) <b>AS</b> pct_dos_pedidos,
+    <b>ROUND</b>(100.0 * (1 - <b>AVG</b>(e.no_prazo)), 1)      <b>AS</b> pct_entregue_atrasado
+<b>FROM</b> vw_entregas e
+<b>JOIN</b> orders o <b>ON</b> o.order_id = e.order_id
+<b>JOIN</b> limite l <b>ON</b> l.order_id = e.order_id
+<b>GROUP BY</b> postagem
+<b>ORDER BY</b> pct_entregue_atrasado <b>DESC</b></code></pre></details></div>
+</article><article class="q" id="q7">
+  <div class="qh"><span class="qn">05</span><div><h3>Quais rotas mais atrasam?</h3><span class="ans">SP → RJ lidera</span></div></div>
+  <p class="ins">Entre as rotas com 500+ pedidos, SP → RJ tem o maior atraso: 14,2% em mais de 8 mil pedidos. A distância sozinha não explica: SP → PA, bem mais longa, atrasa menos (12,0%).</p>
+  <div class="bars"><div class="br hi"><span class="bl">SP → RJ</span><span class="bt"><i style="width:92.6%"></i></span><span class="bv">14,2%</span></div><div class="br"><span class="bl">SP → CE</span><span class="bt"><i style="width:91.3%"></i></span><span class="bv">14,0%</span></div><div class="br"><span class="bl">SP → BA</span><span class="bt"><i style="width:83.5%"></i></span><span class="bv">12,8%</span></div><div class="br"><span class="bl">SP → ES</span><span class="bt"><i style="width:80.2%"></i></span><span class="bv">12,3%</span></div><div class="br"><span class="bl">PR → RJ</span><span class="bt"><i style="width:78.9%"></i></span><span class="bv">12,1%</span></div><div class="br"><span class="bl">SP → PA</span><span class="bt"><i style="width:78.2%"></i></span><span class="bv">12,0%</span></div><div class="br"><span class="bl">SP → PE</span><span class="bt"><i style="width:64.6%"></i></span><span class="bv">9,9%</span></div><div class="br"><span class="bl">SP → SC</span><span class="bt"><i style="width:62.6%"></i></span><span class="bv">9,6%</span></div></div>
+  <div class="tg"><details><summary><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Tabela de resultado</summary><div class="tw"><table><thead><tr><th>Rota</th><th>Pedidos</th><th>% atraso</th><th>Lead time (dias)</th></tr></thead><tbody><tr><td>SP → RJ</td><td>8.094</td><td>14,2</td><td>16,3</td></tr><tr><td>SP → CE</td><td>953</td><td>14,0</td><td>21,4</td></tr><tr><td>SP → BA</td><td>2.285</td><td>12,8</td><td>19,8</td></tr><tr><td>SP → ES</td><td>1.451</td><td>12,3</td><td>15,8</td></tr><tr><td>PR → RJ</td><td>968</td><td>12,1</td><td>17,3</td></tr><tr><td>SP → PA</td><td>674</td><td>12,0</td><td>23,4</td></tr><tr><td>SP → PE</td><td>1.118</td><td>9,9</td><td>19,0</td></tr><tr><td>SP → SC</td><td>2.302</td><td>9,6</td><td>15,9</td></tr></tbody></table></div></details>
+  <details><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Consulta SQL</summary><pre><code><b>WITH</b> rota <b>AS</b> (
+    <b>SELECT</b> <b>DISTINCT</b> e.order_id, s.seller_state || <i class="st">&#x27; → &#x27;</i> || e.uf_cliente <b>AS</b> rota, e.no_prazo, e.lead_time
+    <b>FROM</b> vw_entregas e
+    <b>JOIN</b> order_items i <b>ON</b> i.order_id = e.order_id
+    <b>JOIN</b> sellers s     <b>ON</b> s.seller_id = i.seller_id
+)
+<b>SELECT</b>
+    rota,
+    <b>COUNT</b>(*)                               <b>AS</b> pedidos,
+    <b>ROUND</b>(100.0 * (1 - <b>AVG</b>(no_prazo)), 1)  <b>AS</b> pct_atraso,
+    <b>ROUND</b>(<b>AVG</b>(lead_time), 1)               <b>AS</b> lead_time_medio
+<b>FROM</b> rota
+<b>GROUP BY</b> rota
+<b>HAVING</b> <b>COUNT</b>(*) &gt;= 500
+<b>ORDER BY</b> pct_atraso <b>DESC</b>
+<b>LIMIT</b> 8</code></pre></details></div>
+</article>
+</section><section class="blk" id="reg">
+  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></div><div><h2>Regiões</h2><p>Quem recebe pior</p></div></div>
+  <article class="q" id="q4">
+  <div class="qh"><span class="qn">06</span><div><h3>Quais estados recebem com mais atraso?</h3><span class="ans">Nordeste no topo</span></div></div>
+  <p class="ins">Os cinco piores estados são do Nordeste, com Alagoas em 21,1% de atraso. O Rio de Janeiro chama atenção por juntar atraso alto (12,2%) com volume grande: mais de 12 mil pedidos.</p>
+  <div class="bars"><div class="br hi"><span class="bl">AL</span><span class="bt"><i style="width:92.6%"></i></span><span class="bv">21,1%</span></div><div class="br"><span class="bl">MA</span><span class="bt"><i style="width:78.1%"></i></span><span class="bv">17,8%</span></div><div class="br"><span class="bl">SE</span><span class="bt"><i style="width:67.1%"></i></span><span class="bv">15,3%</span></div><div class="br"><span class="bl">PI</span><span class="bt"><i style="width:61.9%"></i></span><span class="bv">14,1%</span></div><div class="br"><span class="bl">CE</span><span class="bt"><i style="width:61.4%"></i></span><span class="bv">14,0%</span></div><div class="br"><span class="bl">BA</span><span class="bt"><i style="width:53.5%"></i></span><span class="bv">12,2%</span></div><div class="br"><span class="bl">RJ</span><span class="bt"><i style="width:53.5%"></i></span><span class="bv">12,2%</span></div><div class="br"><span class="bl">PA</span><span class="bt"><i style="width:48.7%"></i></span><span class="bv">11,1%</span></div><div class="br"><span class="bl">ES</span><span class="bt"><i style="width:47.4%"></i></span><span class="bv">10,8%</span></div><div class="br"><span class="bl">PB</span><span class="bt"><i style="width:45.6%"></i></span><span class="bv">10,4%</span></div></div>
+  <div class="tg"><details><summary><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Tabela de resultado</summary><div class="tw"><table><thead><tr><th>#</th><th>UF</th><th>Pedidos</th><th>% atraso</th><th>Lead time (dias)</th></tr></thead><tbody><tr><td>1</td><td>AL</td><td>393</td><td>21,1</td><td>24,4</td></tr><tr><td>2</td><td>MA</td><td>704</td><td>17,8</td><td>21,7</td></tr><tr><td>3</td><td>SE</td><td>333</td><td>15,3</td><td>21,6</td></tr><tr><td>4</td><td>PI</td><td>469</td><td>14,1</td><td>19,6</td></tr><tr><td>5</td><td>CE</td><td>1.259</td><td>14,0</td><td>21,4</td></tr><tr><td>6</td><td>BA</td><td>3.210</td><td>12,2</td><td>19,4</td></tr><tr><td>6</td><td>RJ</td><td>12.211</td><td>12,2</td><td>15,4</td></tr><tr><td>8</td><td>PA</td><td>936</td><td>11,1</td><td>23,8</td></tr><tr><td>9</td><td>ES</td><td>1.968</td><td>10,8</td><td>15,8</td></tr><tr><td>10</td><td>PB</td><td>509</td><td>10,4</td><td>20,5</td></tr></tbody></table></div></details>
+  <details><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Consulta SQL</summary><pre><code><b>WITH</b> por_uf <b>AS</b> (
+    <b>SELECT</b>
+        uf_cliente,
+        <b>COUNT</b>(*)                                <b>AS</b> pedidos,
+        <b>ROUND</b>(100.0 * (1 - <b>AVG</b>(no_prazo)), 1)   <b>AS</b> pct_atraso,
+        <b>ROUND</b>(<b>AVG</b>(lead_time), 1)                <b>AS</b> lead_time_medio
+    <b>FROM</b> vw_entregas
+    <b>GROUP BY</b> uf_cliente
+    <b>HAVING</b> <b>COUNT</b>(*) &gt;= 300
+)
+<b>SELECT</b>
+    <b>RANK</b>() <b>OVER</b> (<b>ORDER BY</b> pct_atraso <b>DESC</b>) <b>AS</b> ranking,
+    uf_cliente, pedidos, pct_atraso, lead_time_medio
+<b>FROM</b> por_uf
+<b>ORDER BY</b> ranking
+<b>LIMIT</b> 10</code></pre></details></div>
+</article>
+</section><section class="blk" id="cli">
+  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></div><div><h2>Cliente</h2><p>O custo do atraso</p></div></div>
+  <article class="q" id="q6">
+  <div class="qh"><span class="qn">07</span><div><h3>O atraso derruba a satisfação do cliente?</h3><span class="ans">4,28 → 1,69</span></div></div>
+  <p class="ins">A nota cai de 4,28 para 1,69 quando o atraso passa de 7 dias, e 79% desses clientes dão nota 1 ou 2. Um a três dias de atraso já tiram um ponto inteiro da nota.</p>
+  <div class="bars"><div class="br"><span class="bl">No prazo</span><span class="bt"><i style="width:85.6%"></i></span><span class="bv">4,28</span></div><div class="br"><span class="bl">1 a 3 dias de atraso</span><span class="bt"><i style="width:65.6%"></i></span><span class="bv">3,28</span></div><div class="br"><span class="bl">4 a 7 dias de atraso</span><span class="bt"><i style="width:41.8%"></i></span><span class="bv">2,09</span></div><div class="br hi"><span class="bl">Mais de 7 dias de atraso</span><span class="bt"><i style="width:33.8%"></i></span><span class="bv">1,69</span></div></div>
+  <div class="tg"><details><summary><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Tabela de resultado</summary><div class="tw"><table><thead><tr><th>Faixa</th><th>Pedidos</th><th>Nota média</th><th>% notas 1 ou 2</th></tr></thead><tbody><tr><td>No prazo</td><td>88.596</td><td>4,28</td><td>9,5</td></tr><tr><td>1 a 3 dias de atraso</td><td>1.860</td><td>3,28</td><td>32,6</td></tr><tr><td>4 a 7 dias de atraso</td><td>1.794</td><td>2,09</td><td>68,0</td></tr><tr><td>Mais de 7 dias de atraso</td><td>2.855</td><td>1,69</td><td>79,4</td></tr></tbody></table></div></details>
+  <details><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Consulta SQL</summary><pre><code><b>WITH</b> nota <b>AS</b> (
+    <b>SELECT</b> order_id, <b>AVG</b>(review_score) <b>AS</b> nota
+    <b>FROM</b> order_reviews
+    <b>GROUP BY</b> order_id
+)
+<b>SELECT</b>
+    <b>CASE</b>
+        <b>WHEN</b> e.dias_vs_prazo &lt;= 0  <b>THEN</b> <i class="st">&#x27;1. No prazo&#x27;</i>
+        <b>WHEN</b> e.dias_vs_prazo &lt;= 3  <b>THEN</b> <i class="st">&#x27;2. 1 a 3 dias de atraso&#x27;</i>
+        <b>WHEN</b> e.dias_vs_prazo &lt;= 7  <b>THEN</b> <i class="st">&#x27;3. 4 a 7 dias de atraso&#x27;</i>
+        <b>ELSE</b>                            <i class="st">&#x27;4. Mais de 7 dias de atraso&#x27;</i>
+    <b>END</b>                                         <b>AS</b> faixa,
+    <b>COUNT</b>(*)                                    <b>AS</b> pedidos,
+    <b>ROUND</b>(<b>AVG</b>(n.nota), 2)                       <b>AS</b> nota_media,
+    <b>ROUND</b>(100.0 * <b>AVG</b>(<b>CASE</b> <b>WHEN</b> n.nota &lt;= 2 <b>THEN</b> 1.0 <b>ELSE</b> 0 <b>END</b>), 1) <b>AS</b> pct_notas_1_ou_2
+<b>FROM</b> vw_entregas e
+<b>JOIN</b> nota n <b>ON</b> n.order_id = e.order_id
+<b>GROUP BY</b> faixa
+<b>ORDER BY</b> faixa</code></pre></details></div>
+</article>
+</section><section class="blk" id="pro">
+  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><h2>Promessa</h2><p>O prazo que é prometido</p></div></div>
+  <article class="q" id="q8">
+  <div class="qh"><span class="qn">08</span><div><h3>O prazo prometido é realista?</h3><span class="ans">Folga demais</span></div></div>
+  <p class="ins">73,7% dos pedidos chegam 8 dias ou mais antes do prazo prometido. Há espaço para prometer prazos menores sem aumentar o atraso, o que pode ajudar na conversão.</p>
+  <div class="bars"><div class="br"><span class="bl">15+ dias antes do prazo</span><span class="bt"><i style="width:88.4%"></i></span><span class="bv">36,0%</span></div><div class="br hi"><span class="bl">8 a 14 dias antes</span><span class="bt"><i style="width:92.6%"></i></span><span class="bv">37,7%</span></div><div class="br"><span class="bl">1 a 7 dias antes</span><span class="bt"><i style="width:44.5%"></i></span><span class="bv">18,1%</span></div><div class="br"><span class="bl">No dia do prazo</span><span class="bt"><i style="width:3.2%"></i></span><span class="bv">1,3%</span></div><div class="br"><span class="bl">Depois do prazo</span><span class="bt"><i style="width:16.7%"></i></span><span class="bv">6,8%</span></div></div>
+  <div class="tg"><details><summary><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Tabela de resultado</summary><div class="tw"><table><thead><tr><th>Chegada</th><th>Pedidos</th><th>% dos pedidos</th></tr></thead><tbody><tr><td>15+ dias antes do prazo</td><td>34.229</td><td>36,0</td></tr><tr><td>8 a 14 dias antes</td><td>35.889</td><td>37,7</td></tr><tr><td>1 a 7 dias antes</td><td>17.195</td><td>18,1</td></tr><tr><td>No dia do prazo</td><td>1.283</td><td>1,3</td></tr><tr><td>Depois do prazo</td><td>6.509</td><td>6,8</td></tr></tbody></table></div></details>
+  <details><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Consulta SQL</summary><pre><code><b>SELECT</b>
+    <b>CASE</b>
+        <b>WHEN</b> dias_vs_prazo &lt;= -15 <b>THEN</b> <i class="st">&#x27;1. 15+ dias antes do prazo&#x27;</i>
+        <b>WHEN</b> dias_vs_prazo &lt;= -8  <b>THEN</b> <i class="st">&#x27;2. 8 a 14 dias antes&#x27;</i>
+        <b>WHEN</b> dias_vs_prazo &lt;= -1  <b>THEN</b> <i class="st">&#x27;3. 1 a 7 dias antes&#x27;</i>
+        <b>WHEN</b> dias_vs_prazo  =  0  <b>THEN</b> <i class="st">&#x27;4. No dia do prazo&#x27;</i>
+        <b>ELSE</b>                           <i class="st">&#x27;5. Depois do prazo&#x27;</i>
+    <b>END</b>                                              <b>AS</b> chegada,
+    <b>COUNT</b>(*)                                         <b>AS</b> pedidos,
+    <b>ROUND</b>(100.0 * <b>COUNT</b>(*) / <b>SUM</b>(<b>COUNT</b>(*)) <b>OVER</b> (), 1) <b>AS</b> pct
+<b>FROM</b> vw_entregas
+<b>GROUP BY</b> chegada
+<b>ORDER BY</b> chegada</code></pre></details></div>
+</article>
+</section>
+
+  <section class="blk" id="recomendacoes">
+    <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg></div><div><h2>Recomendações</h2><p>O que eu faria com esses números</p></div></div>
+    <div class="rec">
+      <div class="rc"><span class="n">01</span><b>Atacar a postagem fora do limite</b><p>São só 9% dos pedidos, mas com quase 4 vezes mais atraso. Alertar o vendedor perto do limite e acompanhar quem reincide tem retorno rápido.</p></div>
+      <div class="rc"><span class="n">02</span><b>Revisar o transporte nas rotas críticas</b><p>SP → RJ e os destinos do Nordeste concentram o atraso. Vale comparar transportadoras e prazos por rota.</p></div>
+      <div class="rc"><span class="n">03</span><b>Ajustar o prazo prometido</b><p>A estimativa tem folga demais. Prometer menos dias onde a operação entrega com sobra pode ajudar na conversão sem piorar o nível de serviço.</p></div>
+      <div class="rc"><span class="n">04</span><b>Planejar os picos</b><p>Black Friday e o início de 2018 derrubaram o nível de serviço. Capacidade extra e comunicação de prazo nesses meses evitam a queda na nota.</p></div>
+    </div>
+  </section>
+
+  <section class="blk" id="script">
+    <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></div><div><h2>Script</h2><p>Todo o código em um arquivo</p></div></div>
+    <div class="card"><p>O script completo cria a view base e roda as oito consultas. Os dados vêm do Brazilian E-Commerce Public Dataset by Olist, publicado no Kaggle sob a licença CC BY-NC-SA 4.0.</p>
+      <a class="btn pri" href="analise_pedidos.sql" download><svg class="i" viewBox="0 0 24 24"><path d="M12 4v12M6 11l6 6 6-6M5 21h14"/></svg>Baixar o script SQL</a>
+      <a class="btn out" href="https://erickkamorim.github.io/performance-logistica/">Ver o dashboard FLUXO</a>
+      <a class="btn out" href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank" rel="noopener">Dataset no Kaggle</a>
+    </div>
+    <footer><span>LUPA · projeto de portfólio de <a href="https://erickkamorim.github.io/">Erick Amorim</a></span><span>Dados: Olist (CC BY-NC-SA 4.0)</span></footer>
+  </section>
+</div></main>
+
+<nav class="mnav" aria-label="Navegação"><a href="#resumo" aria-label="Resumo" class="on"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></a><a href="#op" aria-label="Operação"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></a><a href="#gar" aria-label="Gargalos"><svg class="i" viewBox="0 0 24 24"><path d="M4 18h5v-5h5V8h6"/></svg></a><a href="#reg" aria-label="Regiões"><svg class="i" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></a><a href="#cli" aria-label="Cliente"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></a><a href="#pro" aria-label="Promessa"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></a><a href="#recomendacoes" aria-label="Recomendações"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg></a></nav>
+<script>
+(function(){
+  const ids=["resumo", "base", "op", "gar", "reg", "cli", "pro", "recomendacoes", "script"], mids=["resumo", "op", "gar", "reg", "cli", "pro", "recomendacoes"];
+  const L=document.querySelectorAll('.nav a'),M=document.querySelectorAll('.mnav a');
+  function cur(list){let y=scrollY+innerHeight*.3,idx=0;list.forEach((id,i)=>{const s=document.getElementById(id);if(s&&s.getBoundingClientRect().top+scrollY<=y)idx=i});if(innerHeight+scrollY>=document.body.scrollHeight-4)idx=list.length-1;return idx}
+  function spy(){const a=cur(ids),b=cur(mids);L.forEach((x,i)=>x.classList.toggle('on',i===a));M.forEach((x,i)=>x.classList.toggle('on',i===b))}
+  addEventListener('scroll',spy,{passive:true});spy();
+})();
+</script>
+</body>
+</html>
