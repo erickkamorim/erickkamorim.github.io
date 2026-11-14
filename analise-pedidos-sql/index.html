@@ -3,153 +3,159 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LUPA — Análise de Pedidos com SQL | Erick Amorim</title>
-<meta name="description" content="LUPA: oito perguntas de logística respondidas com SQL sobre 95 mil pedidos reais da Olist.">
-<meta name="theme-color" content="#08070d">
-<meta property="og:title" content="LUPA — Análise de Pedidos com SQL">
+<title>LUPA — Por que o pedido atrasa? | Análise de dados em SQL · Erick Amorim</title>
+<meta name="description" content="LUPA: relatório de dados com oito perguntas de logística respondidas em SQL sobre 95 mil pedidos reais da Olist.">
+<meta name="theme-color" content="#f5f0e6">
+<meta property="og:title" content="LUPA — Por que o pedido atrasa?">
 <meta property="og:description" content="Oito perguntas de logística respondidas com SQL sobre 95 mil pedidos reais da Olist.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#08070d;--s1:#100e17;--s2:#17141f;--line:#241f30;--tx:#f3f1f7;--mut:#9b96a8;--mut2:#6c6779;--acc:#b49bff;--accd:rgba(180,155,255,.12);--ink:#120a24}
+:root{--bg:#f5f0e6;--paper:#fbf8f2;--ink:#1c1915;--mut:#6f675b;--mut2:#9a9183;--line:#e1d8c8;--acc:#3b2bd6;--accl:#e9e5ff;--hl:#ffe36e;--bar:#cfc6b6}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;scroll-padding-top:24px}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
 html,body{overflow-x:hidden}
-body{background:var(--bg);color:var(--tx);font-family:Manrope,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1px);background-size:24px 24px}
-a{color:inherit;text-decoration:none}
-svg.i{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.side{position:fixed;left:0;top:0;bottom:0;width:240px;background:#0b0a11;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;z-index:30;overflow-y:auto}
-.brand{display:flex;align-items:center;gap:12px;padding:0 6px 22px}
-.lg{width:44px;height:44px;border-radius:14px;background:var(--acc);display:grid;place-items:center;color:var(--ink)}
-.lg svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
-.brand b{display:block;font-family:Unbounded;font-size:18px;letter-spacing:.02em}
-.brand span{font-size:12px;color:var(--mut);font-weight:600}
-.nlab{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--mut2);padding:8px 10px}
-.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;font-weight:700;font-size:14.5px;color:#c9c4d4;margin-bottom:2px;transition:background .2s,color .2s}
-.nav a:hover{background:var(--s2);color:#fff}
-.nav a.on{background:var(--acc);color:var(--ink)}
-.sfoot{margin-top:auto;background:var(--s2);border:1px solid var(--line);border-radius:16px;padding:14px;font-size:12px;color:var(--mut)}
-.sfoot b{display:flex;align-items:center;gap:8px;color:var(--tx);font-size:13px;margin-bottom:4px}
-.sfoot b i{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
-.sfoot a{display:inline-flex;align-items:center;gap:6px;margin-top:10px;color:var(--acc);font-weight:800}
-main{margin-left:240px;padding:0 34px 90px}
-.wrap{max-width:980px;margin:0 auto}
-.hero{padding:44px 0 10px}
-.chip{display:inline-flex;align-items:center;gap:8px;background:var(--accd);color:var(--acc);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:7px 12px;border-radius:99px}
-.hero h1{font-family:Unbounded;font-size:clamp(30px,4.4vw,50px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:16px 0 12px}
-.hero h1 span{color:var(--acc)}
-.hero p{color:var(--mut);font-size:16px;max-width:720px}
-.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-.tags span{font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:10px;border:1px solid #2f2840;color:#d5cfe2;font-family:"JetBrains Mono",monospace}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px}
-.stats div{background:var(--s1);border:1px solid var(--line);border-radius:22px;padding:18px}
-.stats b{display:block;font-family:Unbounded;font-size:24px;font-weight:700;letter-spacing:-.03em}
-.stats span{font-size:13px;color:var(--mut);font-weight:600}
-.stats div:first-child{background:linear-gradient(140deg,#d2c3ff,var(--acc));border-color:var(--acc);color:var(--ink)}
-.stats div:first-child span{color:rgba(18,10,36,.7)}
-.idx{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
-.idx a{display:flex;align-items:center;gap:12px;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-weight:700;font-size:14px;transition:border-color .2s,transform .2s}
-.idx a:hover{border-color:var(--acc);transform:translateY(-2px)}
-.idx a span{font-family:"JetBrains Mono",monospace;color:var(--acc);font-size:13px}
-.idx a em{margin-left:auto;font-style:normal;font-size:12px;color:var(--mut);font-weight:700;white-space:nowrap;padding-left:8px}
-section.blk{padding-top:56px}
-.bh{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-.bic{width:44px;height:44px;border-radius:14px;background:var(--accd);color:var(--acc);display:grid;place-items:center}
-.bh h2{font-family:Unbounded;font-size:24px;font-weight:700;letter-spacing:-.02em}
-.bh p{color:var(--mut);font-size:14px}
-.q{background:var(--s1);border:1px solid var(--line);border-radius:26px;padding:26px;margin-bottom:16px;scroll-margin-top:24px}
-.qh{display:flex;gap:16px;align-items:flex-start}
-.qn{font-family:Unbounded;font-size:15px;font-weight:700;color:var(--ink);background:var(--acc);border-radius:12px;padding:7px 10px;line-height:1}
-.q h3{font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
-.ans{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
-.ins{color:#ddd8e8;margin:16px 0 18px;font-size:15.5px;padding:14px 16px;background:var(--accd);border-radius:16px;border:1px solid rgba(180,155,255,.22)}
-.bars{display:grid;gap:9px}
-.br{display:grid;grid-template-columns:190px 1fr 74px;gap:12px;align-items:center;font-size:13.5px}
-.bl{color:var(--mut);font-weight:600;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bt{height:16px;background:#1b1724;border-radius:5px;overflow:hidden}
-.bt i{display:block;height:100%;background:#4a4260;border-radius:5px}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.65;-webkit-font-smoothing:antialiased;font-size:16.5px}
+a{color:inherit}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.serif{font-family:Fraunces,Georgia,serif}
+mark{background:linear-gradient(transparent 52%,var(--hl) 52%);color:inherit;padding:0 2px}
+.prog{position:fixed;top:0;left:0;height:3px;background:var(--acc);width:0;z-index:50}
+
+/* masthead */
+.mast{border-bottom:1px solid var(--ink);background:var(--bg);position:sticky;top:0;z-index:40}
+.mast .in{max-width:1180px;margin:0 auto;padding:0 28px;height:58px;display:flex;align-items:center;gap:16px}
+.mlogo{display:flex;align-items:center;gap:9px;font-family:Fraunces;font-weight:700;font-size:22px;letter-spacing:.04em;text-decoration:none}
+.mlogo svg{width:22px;height:22px;stroke:var(--acc);stroke-width:2.6;fill:none;stroke-linecap:round}
+.mkick{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);border-left:1px solid var(--line);padding-left:16px}
+.mport{margin-left:auto;font-size:13px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+.mport:hover{color:var(--acc);border-color:var(--acc)}
+
+/* hero */
+.hero{max-width:1180px;margin:0 auto;padding:64px 28px 20px}
+.kick{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);font-weight:700}
+.hero h1{font-family:Fraunces;font-weight:700;font-size:clamp(40px,6.4vw,84px);line-height:.98;letter-spacing:-.025em;margin:16px 0 22px;max-width:980px;font-variation-settings:"opsz" 144}
+.hero h1 em{font-style:italic;font-weight:500;color:var(--acc)}
+.deck{font-family:Fraunces;font-size:clamp(19px,2vw,23px);line-height:1.45;color:#3d372f;max-width:760px;font-variation-settings:"opsz" 24}
+.by{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:22px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0}
+.by b{color:var(--ink);font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);margin-top:34px;border-top:3px solid var(--ink)}
+.facts div{padding:18px 18px 4px 0;border-right:1px solid var(--line);margin-right:18px}
+.facts div:last-child{border-right:0;margin-right:0}
+.facts b{display:block;font-family:Fraunces;font-weight:600;font-size:40px;line-height:1;letter-spacing:-.02em;font-variation-settings:"opsz" 144}
+.facts span{display:block;font-size:14px;color:var(--mut);margin-top:8px;line-height:1.4}
+
+/* layout */
+.lay{max-width:1180px;margin:0 auto;padding:30px 28px 80px;display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:70px}
+.toc{position:sticky;top:90px;align-self:start;font-size:14px}
+.toc h4{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
+.toc a{display:block;text-decoration:none;color:var(--mut);padding:6px 0 6px 14px;border-left:2px solid var(--line);transition:color .2s,border-color .2s}
+.toc a:hover{color:var(--ink)}
+.toc a.on{color:var(--ink);border-left-color:var(--acc);font-weight:600}
+.toc .dl{display:inline-flex;align-items:center;gap:8px;margin-top:18px;font-weight:600;color:var(--acc);text-decoration:none;font-size:13.5px}
+.col{max-width:740px}
+.idx{list-style:none;counter-reset:q;border-top:1px solid var(--ink)}
+.idx a{display:flex;gap:16px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--line);text-decoration:none}
+.idx a:hover h5{color:var(--acc)}
+.idx span{font-family:Fraunces;font-style:italic;color:var(--acc);font-size:15px;min-width:24px}
+.idx a{font-size:16px;font-weight:600;transition:color .2s}.idx a:hover{color:var(--acc)}
+.idx em{margin-left:auto;font-style:normal;font-size:13px;color:var(--mut);white-space:nowrap;padding-left:12px}
+.lead{font-family:Fraunces;font-size:20px;line-height:1.5;color:#3d372f;margin-bottom:22px;font-variation-settings:"opsz" 24}
+.lead:first-letter{float:left;font-size:64px;line-height:.85;font-weight:700;padding:6px 10px 0 0;color:var(--acc)}
+
+section.blk{padding-top:64px}
+.chap{display:flex;gap:18px;align-items:flex-end;border-bottom:3px solid var(--ink);padding-bottom:12px;margin-bottom:8px}
+.rn{font-family:Fraunces;font-style:italic;font-size:54px;line-height:.8;color:var(--acc);font-weight:500}
+.chap h2{font-family:Fraunces;font-size:34px;font-weight:700;letter-spacing:-.015em;line-height:1}
+.chap p{color:var(--mut);font-size:14.5px;margin-top:4px}
+
+.q{padding:30px 0 34px;border-bottom:1px solid var(--line)}
+.qh{display:block}
+.qn{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:6px}
+.qn:before{content:"Pergunta "}
+.q h3{font-family:Fraunces;font-size:28px;font-weight:600;line-height:1.15;letter-spacing:-.01em;font-variation-settings:"opsz" 72}
+.ans{display:inline-block;margin-top:10px;font-size:13px;font-weight:700;color:var(--acc);background:var(--accl);padding:3px 10px;border-radius:3px}
+.ins{margin:16px 0 22px;font-size:17px;line-height:1.7;color:#2e2a24}
+.bars{display:grid;gap:8px;margin:6px 0 8px}
+.br{display:grid;grid-template-columns:200px 1fr 70px;gap:12px;align-items:center;font-size:14px}
+.bl{color:var(--mut);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt{height:14px;background:transparent;border-bottom:1px solid var(--line)}
+.bt i{display:block;height:100%;background:var(--bar)}
 .br.hi .bt i{background:var(--acc)}
-.br.hi .bl{color:var(--tx);font-weight:800}
-.bv{font-weight:800}
-.cols{display:flex;align-items:flex-end;gap:5px;height:190px;padding-top:24px}
-.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative;min-width:0}
-.col i{display:block;background:#4a4260;border-radius:4px 4px 0 0}
-.col.hi i{background:var(--acc)}
-.col em{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--mut2);font-weight:600;white-space:nowrap}
-.col .cv{display:block;text-align:center;font-size:12px;font-weight:800;white-space:nowrap;margin-bottom:4px;min-height:0}
-.cap{font-size:12.5px;color:var(--mut2);margin-top:30px}
-.kp{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-.kp div{background:var(--s2);border:1px solid var(--line);border-radius:16px;padding:14px}
-.kp b{display:block;font-family:Unbounded;font-size:19px;font-weight:700}
-.kp span{font-size:12px;color:var(--mut);font-weight:600}
-.tg{margin-top:18px;display:grid;gap:8px}
-details summary{cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--acc);list-style:none}
+.br.hi .bl{color:var(--ink);font-weight:700}
+.bv{font-weight:700;font-variant-numeric:tabular-nums}
+.cols{display:flex;align-items:flex-end;gap:4px;height:200px;padding-top:26px;border-bottom:1px solid var(--ink)}
+.cols .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative;min-width:0;max-width:none}
+.cols .col i{display:block;background:var(--bar)}
+.cols .col.hi i{background:var(--acc)}
+.cols .col em{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11.5px;color:var(--mut);white-space:nowrap}
+.cols .col .cv{display:block;text-align:center;font-size:13px;font-weight:700;margin-bottom:4px;white-space:nowrap}
+.cap{font-size:13px;color:var(--mut);margin-top:32px;font-style:italic;font-family:Fraunces}
+.kp{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.kp div{padding:14px 12px 12px 0}
+.kp b{display:block;font-family:Fraunces;font-size:26px;font-weight:600;font-variation-settings:"opsz" 72}
+.kp span{font-size:12.5px;color:var(--mut);line-height:1.35;display:block}
+.tg{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px 22px}
+.tg details{flex-basis:100%}
+.tg details:first-child{flex-basis:auto}
+details summary{cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;list-style:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+details summary:hover{color:var(--acc);border-color:var(--acc)}
 details summary::-webkit-details-marker{display:none}
-details summary svg{width:16px;height:16px}
-.tw{overflow-x:auto;margin-top:10px}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.tg{display:grid;gap:12px}
+.tw{overflow-x:auto;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
 th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
-th{color:var(--mut);font-weight:700;font-size:12.5px}
-pre{margin-top:10px;background:#07060b;border:1px solid var(--line);border-radius:16px;padding:16px;overflow-x:auto;font:13px/1.65 "JetBrains Mono",monospace;color:#dcd7e6}
-pre b{color:var(--acc);font-weight:500} pre i.cm{color:#5f5a6e;font-style:normal} pre i.st{color:#7ee0b5;font-style:normal}
-.card{background:var(--s1);border:1px solid var(--line);border-radius:26px;padding:26px}
-.card p{color:var(--mut);font-size:15px}
-.rec{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.rc{background:var(--s1);border:1px solid var(--line);border-radius:22px;padding:22px}
-.rc .n{font-family:Unbounded;font-size:13px;color:var(--acc)}
-.rc b{display:block;font-size:17px;margin:8px 0 6px}
-.rc p{color:var(--mut);font-size:14.5px}
-.btn{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:14px;padding:12px 18px;border-radius:14px;margin:16px 8px 0 0}
-.btn.pri{background:var(--acc);color:var(--ink)}
-.btn.out{border:1px solid #352d48}
-.btn.out:hover{border-color:var(--acc);color:var(--acc)}
-footer{margin-top:50px;padding-top:22px;border-top:1px solid var(--line);color:var(--mut2);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
-footer a{color:var(--mut)}
-.mbrand{display:none;align-items:center;gap:10px;padding:18px 0 0}
-.mbrand .lg{width:38px;height:38px;border-radius:12px}
-.mbrand b{font-family:Unbounded;font-size:16px}
-.mnav{display:none}
-@media (max-width:900px){.stats{grid-template-columns:1fr 1fr}.kp{grid-template-columns:repeat(2,1fr)}.idx,.rec{grid-template-columns:1fr}.br{grid-template-columns:120px 1fr 64px}}
-@media (max-width:860px){
-  .side{display:none} main{margin-left:0;padding:0 18px 110px} .mbrand{display:flex}
-  .mnav{display:flex;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;background:rgba(23,20,31,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:99px;padding:6px;gap:2px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
-  .mnav a{display:grid;place-items:center;width:44px;height:44px;border-radius:99px;color:var(--mut)}
-  .mnav a.on{background:var(--acc);color:var(--ink)}
-  .q{padding:20px}.q h3{font-size:18px}
-}
+thead th{border-bottom:2px solid var(--ink);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+pre{margin-top:12px;background:#1d1a24;border-radius:6px;padding:18px;overflow-x:auto;font:13px/1.65 "JetBrains Mono",monospace;color:#e8e4f0}
+pre b{color:#b9a9ff;font-weight:500} pre i.cm{color:#7d7590;font-style:normal} pre i.st{color:#ffd76e;font-style:normal}
+.box{background:var(--paper);border:1px solid var(--line);padding:22px 24px;margin-top:18px}
+.box p{color:#3d372f}
+.recs{list-style:none;counter-reset:r;margin-top:10px}
+.recs li{counter-increment:r;padding:20px 0 20px 60px;border-bottom:1px solid var(--line);position:relative}
+.recs li:before{content:counter(r);position:absolute;left:0;top:14px;font-family:Fraunces;font-size:42px;font-style:italic;color:var(--acc);line-height:1}
+.recs b{display:block;font-family:Fraunces;font-size:21px;font-weight:600;margin-bottom:4px}
+.recs p{color:#3d372f}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;padding:12px 18px;margin:18px 10px 0 0;text-decoration:none;border:1px solid var(--ink)}
+.btn.pri{background:var(--ink);color:var(--bg)}
+.btn:hover{border-color:var(--acc)}
+.btn.pri:hover{background:var(--acc)}
+.colophon{margin-top:46px;border-top:3px solid var(--ink);padding-top:16px;font-size:13.5px;color:var(--mut);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+@media (max-width:1000px){.lay{grid-template-columns:1fr}.toc{display:none}.facts{grid-template-columns:1fr 1fr}.facts div:nth-child(2){border-right:0;margin-right:0}}
+@media (max-width:640px){.mkick{display:none}.hero{padding-top:40px}.facts b{font-size:30px}.br{grid-template-columns:110px 1fr 58px;font-size:13px}.kp{grid-template-columns:1fr 1fr}.q h3{font-size:23px}.idx em{display:none}.lead:first-letter{font-size:52px}}
 </style>
 </head>
 <body>
-<aside class="side">
-  <div class="brand"><div class="lg"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg></div><div><b>LUPA</b><span>Análise de Pedidos · SQL</span></div></div>
-  <div class="nlab">ANÁLISE</div>
-  <nav class="nav"><a href="#resumo" class="on"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Resumo</a><a href="#base"><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>A base</a><a href="#op"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Operação</a><a href="#gar"><svg class="i" viewBox="0 0 24 24"><path d="M4 18h5v-5h5V8h6"/></svg>Gargalos</a><a href="#reg"><svg class="i" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Regiões</a><a href="#cli"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>Cliente</a><a href="#pro"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Promessa</a><a href="#recomendacoes"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg>Recomendações</a><a href="#script"><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Script</a></nav>
-  <div class="sfoot"><b><i></i>Dados públicos</b>Olist · 95.105 pedidos entregues · 2016 a 2018<br><a href="https://erickkamorim.github.io/"><svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M15 6l-6 6 6 6"/></svg>Portfólio do Erick</a></div>
-</aside>
+<div class="prog" id="prog"></div>
+<header class="mast"><div class="in">
+  <a class="mlogo" href="#resumo"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg>LUPA</a>
+  <span class="mkick">Relatório de dados · Logística de e-commerce</span>
+  <a class="mport" href="https://erickkamorim.github.io/">Portfólio do Erick</a>
+</div></header>
 
-<main><div class="wrap">
-  <div class="mbrand"><div class="lg"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg></div><b>LUPA</b></div>
+<header class="hero" id="resumo">
+  <div class="kick">Análise em SQL · Dados públicos da Olist</div>
+  <h1>Por que o pedido <em>atrasa?</em></h1>
+  <p class="deck">Oito perguntas que um time de logística faria, respondidas com SQL sobre cerca de 95 mil pedidos reais de um e-commerce brasileiro, entre 2016 e 2018.</p>
+  <div class="by"><span>Por <b>Erick Amorim</b></span><span>Ferramentas: <b>SQLite · CTEs · funções de janela</b></span><span>Fonte: <b>Olist (Kaggle)</b></span><span>Leitura: <b>6 min</b></span></div>
+  <div class="facts">
+    <div><b>93,2%</b><span>dos pedidos chegam no prazo</span></div>
+    <div><b>74%</b><span>do tempo de entrega é transporte</span></div>
+    <div><b>3,9x</b><span>mais atraso quando o vendedor posta fora do limite</span></div>
+    <div><b>1,69</b><span>é a nota média com mais de 7 dias de atraso, contra 4,28 no prazo</span></div>
+  </div>
+</header>
 
-  <section class="hero" id="resumo">
-    <span class="chip">Projeto · SQL</span>
-    <h1>Oito perguntas de logística, <span>respondidas com SQL</span>.</h1>
-    <p>Análise de cerca de 95 mil pedidos reais de um e-commerce brasileiro (Olist, 2016–2018). Cada pergunta traz a resposta em uma frase, o gráfico, a tabela e a consulta usada.</p>
-    <div class="tags"><span>SQLite</span><span>CTE</span><span>RANK() OVER</span><span>SUM() OVER</span><span>CASE</span><span>JULIANDAY</span><span>7 tabelas</span></div>
-    <div class="stats">
-      <div><b>93,2%</b><span>entregues no prazo</span></div>
-      <div><b>74%</b><span>do lead time é transporte</span></div>
-      <div><b>3,9x</b><span>mais atraso com postagem fora do limite</span></div>
-      <div><b>4,28 → 1,69</b><span>nota: no prazo vs. 7+ dias de atraso</span></div>
-    </div>
-    <div class="idx"><a href="#q1"><span>01</span>Como está a operação no geral?<em>93,2% no prazo</em></a><a href="#q2"><span>02</span>Em quais meses o nível de serviço caiu?<em>Black Friday e fev–mar/18</em></a><a href="#q3"><span>03</span>Onde o tempo de entrega é gasto?<em>74% é transporte</em></a><a href="#q5"><span>04</span>Quando o vendedor posta depois do limite, o atraso aumenta?<em>3,9x mais atraso</em></a><a href="#q7"><span>05</span>Quais rotas mais atrasam?<em>SP → RJ lidera</em></a><a href="#q4"><span>06</span>Quais estados recebem com mais atraso?<em>Nordeste no topo</em></a><a href="#q6"><span>07</span>O atraso derruba a satisfação do cliente?<em>4,28 → 1,69</em></a><a href="#q8"><span>08</span>O prazo prometido é realista?<em>Folga demais</em></a></div>
-  </section>
+<div class="lay">
+  <article class="col">
+    <p class="lead">O nível de serviço parece ótimo à primeira vista, mas os números escondem três histórias: o atraso se concentra em poucas etapas e rotas, custa caro na avaliação do cliente e acontece mesmo com um prazo prometido cheio de folga. As perguntas abaixo seguem essa linha.</p>
+    <nav class="idx" aria-label="Perguntas"><a href="#q1"><span>01</span>Como está a operação no geral?<em>93,2% no prazo</em></a><a href="#q2"><span>02</span>Em quais meses o nível de serviço caiu?<em>Black Friday e fev–mar/18</em></a><a href="#q3"><span>03</span>Onde o tempo de entrega é gasto?<em>74% é transporte</em></a><a href="#q5"><span>04</span>Quando o vendedor posta depois do limite, o atraso aumenta?<em>3,9x mais atraso</em></a><a href="#q7"><span>05</span>Quais rotas mais atrasam?<em>SP → RJ lidera</em></a><a href="#q4"><span>06</span>Quais estados recebem com mais atraso?<em>Nordeste no topo</em></a><a href="#q6"><span>07</span>O atraso derruba a satisfação do cliente?<em>4,28 → 1,69</em></a><a href="#q8"><span>08</span>O prazo prometido é realista?<em>Folga demais</em></a></nav>
 
-  <section class="blk" id="base">
-    <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div><div><h2>A base</h2><p>Uma view com o que importa de cada entrega</p></div></div>
-    <div class="card"><p>Pedidos com status "entregue" e todas as datas preenchidas, já com a duração de cada etapa (aprovação, postagem e transporte) e a marcação de entrega no prazo. Registros com postagem anterior à aprovação foram descartados. Todas as perguntas partem desta view.</p>
-      <details style="margin-top:14px"><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Ver a view em SQL</summary><pre><code><b>CREATE VIEW</b> vw_entregas <b>AS</b>
+    <section class="blk" id="base">
+      <div class="chap"><span class="rn">0</span><div><h2>A base</h2><p>Uma view com o que importa de cada entrega</p></div></div>
+      <div class="box"><p>Pedidos com status "entregue" e todas as datas preenchidas, já com a duração de cada etapa (aprovação, postagem e transporte) e a marcação de entrega no prazo. Registros com postagem anterior à aprovação foram descartados. Todas as perguntas partem desta view.</p>
+        <details style="margin-top:14px"><summary><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Ver a view em SQL</summary><pre><code><b>CREATE VIEW</b> vw_entregas <b>AS</b>
 <b>SELECT</b>
     o.order_id,
     c.customer_state                                   <b>AS</b> uf_cliente,
@@ -170,10 +176,10 @@ footer a{color:var(--mut)}
   <b>AND</b> o.order_delivered_customer_date  <b>IS NOT NULL</b>
   <b>AND</b> o.order_estimated_delivery_date  <b>IS NOT NULL</b>
   <b>AND</b> o.order_delivered_carrier_date  &gt;= o.order_approved_at;   <i class="cm">-- descarta registros com datas invertidas</i></code></pre></details></div>
-  </section>
+    </section>
 
-  <section class="blk" id="op">
-  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div><div><h2>Operação</h2><p>Como a operação se comporta</p></div></div>
+    <section class="blk" id="op">
+  <div class="chap"><span class="rn">I</span><div><h2>Operação</h2><p>Como a operação se comporta</p></div></div>
   <article class="q" id="q1">
   <div class="qh"><span class="qn">01</span><div><h3>Como está a operação no geral?</h3><span class="ans">93,2% no prazo</span></div></div>
   <p class="ins">93,2% dos pedidos chegam no prazo, com lead time médio de 12,6 dias. Mas quem atrasa atrasa muito: 10,6 dias em média.</p>
@@ -202,7 +208,7 @@ footer a{color:var(--mut)}
 <b>ORDER BY</b> mes</code></pre></details></div>
 </article>
 </section><section class="blk" id="gar">
-  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M4 18h5v-5h5V8h6"/></svg></div><div><h2>Gargalos</h2><p>Onde o atraso nasce</p></div></div>
+  <div class="chap"><span class="rn">II</span><div><h2>Gargalos</h2><p>Onde o atraso nasce</p></div></div>
   <article class="q" id="q3">
   <div class="qh"><span class="qn">03</span><div><h3>Onde o tempo de entrega é gasto?</h3><span class="ans">74% é transporte</span></div></div>
   <p class="ins">O transporte consome 9,4 dos 12,7 dias, cerca de 74% do lead time. É ali que está a maior alavanca, mais do que na aprovação do pagamento ou na postagem.</p>
@@ -257,7 +263,7 @@ footer a{color:var(--mut)}
 <b>LIMIT</b> 8</code></pre></details></div>
 </article>
 </section><section class="blk" id="reg">
-  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></div><div><h2>Regiões</h2><p>Quem recebe pior</p></div></div>
+  <div class="chap"><span class="rn">III</span><div><h2>Regiões</h2><p>Quem recebe pior</p></div></div>
   <article class="q" id="q4">
   <div class="qh"><span class="qn">06</span><div><h3>Quais estados recebem com mais atraso?</h3><span class="ans">Nordeste no topo</span></div></div>
   <p class="ins">Os cinco piores estados são do Nordeste, com Alagoas em 21,1% de atraso. O Rio de Janeiro chama atenção por juntar atraso alto (12,2%) com volume grande: mais de 12 mil pedidos.</p>
@@ -281,7 +287,7 @@ footer a{color:var(--mut)}
 <b>LIMIT</b> 10</code></pre></details></div>
 </article>
 </section><section class="blk" id="cli">
-  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></div><div><h2>Cliente</h2><p>O custo do atraso</p></div></div>
+  <div class="chap"><span class="rn">IV</span><div><h2>Cliente</h2><p>O custo do atraso</p></div></div>
   <article class="q" id="q6">
   <div class="qh"><span class="qn">07</span><div><h3>O atraso derruba a satisfação do cliente?</h3><span class="ans">4,28 → 1,69</span></div></div>
   <p class="ins">A nota cai de 4,28 para 1,69 quando o atraso passa de 7 dias, e 79% desses clientes dão nota 1 ou 2. Um a três dias de atraso já tiram um ponto inteiro da nota.</p>
@@ -308,7 +314,7 @@ footer a{color:var(--mut)}
 <b>ORDER BY</b> faixa</code></pre></details></div>
 </article>
 </section><section class="blk" id="pro">
-  <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><h2>Promessa</h2><p>O prazo que é prometido</p></div></div>
+  <div class="chap"><span class="rn">V</span><div><h2>Promessa</h2><p>O prazo que é prometido</p></div></div>
   <article class="q" id="q8">
   <div class="qh"><span class="qn">08</span><div><h3>O prazo prometido é realista?</h3><span class="ans">Folga demais</span></div></div>
   <p class="ins">73,7% dos pedidos chegam 8 dias ou mais antes do prazo prometido. Há espaço para prometer prazos menores sem aumentar o atraso, o que pode ajudar na conversão.</p>
@@ -330,34 +336,39 @@ footer a{color:var(--mut)}
 </article>
 </section>
 
-  <section class="blk" id="recomendacoes">
-    <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg></div><div><h2>Recomendações</h2><p>O que eu faria com esses números</p></div></div>
-    <div class="rec">
-      <div class="rc"><span class="n">01</span><b>Atacar a postagem fora do limite</b><p>São só 9% dos pedidos, mas com quase 4 vezes mais atraso. Alertar o vendedor perto do limite e acompanhar quem reincide tem retorno rápido.</p></div>
-      <div class="rc"><span class="n">02</span><b>Revisar o transporte nas rotas críticas</b><p>SP → RJ e os destinos do Nordeste concentram o atraso. Vale comparar transportadoras e prazos por rota.</p></div>
-      <div class="rc"><span class="n">03</span><b>Ajustar o prazo prometido</b><p>A estimativa tem folga demais. Prometer menos dias onde a operação entrega com sobra pode ajudar na conversão sem piorar o nível de serviço.</p></div>
-      <div class="rc"><span class="n">04</span><b>Planejar os picos</b><p>Black Friday e o início de 2018 derrubaram o nível de serviço. Capacidade extra e comunicação de prazo nesses meses evitam a queda na nota.</p></div>
-    </div>
-  </section>
+    <section class="blk" id="recomendacoes">
+      <div class="chap"><span class="rn">→</span><div><h2>O que eu faria</h2><p>Quatro ações a partir dos números</p></div></div>
+      <ol class="recs">
+        <li><b>Atacar a postagem fora do limite</b><p>São só 9% dos pedidos, mas com quase 4 vezes mais atraso. Alertar o vendedor perto do limite e acompanhar quem reincide tem retorno rápido.</p></li>
+        <li><b>Revisar o transporte nas rotas críticas</b><p>SP → RJ e os destinos do Nordeste concentram o atraso. Vale comparar transportadoras e prazos por rota.</p></li>
+        <li><b>Ajustar o prazo prometido</b><p>A estimativa tem folga demais. Prometer menos dias onde a operação entrega com sobra pode ajudar na conversão sem piorar o nível de serviço.</p></li>
+        <li><b>Planejar os picos</b><p>Black Friday e o início de 2018 derrubaram o nível de serviço. Capacidade extra e comunicação de prazo nesses meses evitam a queda na nota.</p></li>
+      </ol>
+    </section>
 
-  <section class="blk" id="script">
-    <div class="bh"><div class="bic"><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></div><div><h2>Script</h2><p>Todo o código em um arquivo</p></div></div>
-    <div class="card"><p>O script completo cria a view base e roda as oito consultas. Os dados vêm do Brazilian E-Commerce Public Dataset by Olist, publicado no Kaggle sob a licença CC BY-NC-SA 4.0.</p>
-      <a class="btn pri" href="analise_pedidos.sql" download><svg class="i" viewBox="0 0 24 24"><path d="M12 4v12M6 11l6 6 6-6M5 21h14"/></svg>Baixar o script SQL</a>
-      <a class="btn out" href="https://erickkamorim.github.io/performance-logistica/">Ver o dashboard FLUXO</a>
-      <a class="btn out" href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank" rel="noopener">Dataset no Kaggle</a>
-    </div>
-    <footer><span>LUPA · projeto de portfólio de <a href="https://erickkamorim.github.io/">Erick Amorim</a></span><span>Dados: Olist (CC BY-NC-SA 4.0)</span></footer>
-  </section>
-</div></main>
+    <section class="blk" id="script">
+      <div class="chap"><span class="rn">{ }</span><div><h2>O código</h2><p>Para reproduzir a análise</p></div></div>
+      <div class="box"><p>O script completo cria a view base e roda as oito consultas em SQLite. Os dados vêm do Brazilian E-Commerce Public Dataset by Olist, publicado no Kaggle sob a licença CC BY-NC-SA 4.0.</p>
+        <a class="btn pri" href="analise_pedidos.sql" download><svg class="i" viewBox="0 0 24 24"><path d="M12 4v12M6 11l6 6 6-6M5 21h14"/></svg>Baixar o script SQL</a>
+        <a class="btn" href="https://erickkamorim.github.io/performance-logistica/">Ver o painel FLUXO</a>
+        <a class="btn" href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank" rel="noopener">Dataset no Kaggle</a>
+      </div>
+      <div class="colophon"><span>LUPA · projeto de portfólio de <a href="https://erickkamorim.github.io/">Erick Amorim</a></span><span>Dados: Olist (CC BY-NC-SA 4.0)</span></div>
+    </section>
+  </article>
 
-<nav class="mnav" aria-label="Navegação"><a href="#resumo" aria-label="Resumo" class="on"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></a><a href="#op" aria-label="Operação"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></a><a href="#gar" aria-label="Gargalos"><svg class="i" viewBox="0 0 24 24"><path d="M4 18h5v-5h5V8h6"/></svg></a><a href="#reg" aria-label="Regiões"><svg class="i" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></a><a href="#cli" aria-label="Cliente"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></a><a href="#pro" aria-label="Promessa"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></a><a href="#recomendacoes" aria-label="Recomendações"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg></a></nav>
+  <aside class="toc" aria-label="Sumário">
+    <h4>Sumário</h4>
+    <a href="#resumo" class="on">Resumo</a><a href="#base">A base</a><a href="#op">Operação</a><a href="#gar">Gargalos</a><a href="#reg">Regiões</a><a href="#cli">Cliente</a><a href="#pro">Promessa</a><a href="#recomendacoes">Recomendações</a><a href="#script">Script</a>
+    <a class="dl" href="analise_pedidos.sql" download><svg class="i" viewBox="0 0 24 24"><path d="M12 4v12M6 11l6 6 6-6M5 21h14"/></svg>Script SQL</a>
+  </aside>
+</div>
+
 <script>
 (function(){
-  const ids=["resumo", "base", "op", "gar", "reg", "cli", "pro", "recomendacoes", "script"], mids=["resumo", "op", "gar", "reg", "cli", "pro", "recomendacoes"];
-  const L=document.querySelectorAll('.nav a'),M=document.querySelectorAll('.mnav a');
-  function cur(list){let y=scrollY+innerHeight*.3,idx=0;list.forEach((id,i)=>{const s=document.getElementById(id);if(s&&s.getBoundingClientRect().top+scrollY<=y)idx=i});if(innerHeight+scrollY>=document.body.scrollHeight-4)idx=list.length-1;return idx}
-  function spy(){const a=cur(ids),b=cur(mids);L.forEach((x,i)=>x.classList.toggle('on',i===a));M.forEach((x,i)=>x.classList.toggle('on',i===b))}
+  const ids=["resumo", "base", "op", "gar", "reg", "cli", "pro", "recomendacoes", "script"];
+  const L=document.querySelectorAll('.toc > a:not(.dl)');const P=document.getElementById('prog');
+  function spy(){let y=scrollY+innerHeight*.3,idx=0;ids.forEach((id,i)=>{const s=document.getElementById(id);if(s&&s.getBoundingClientRect().top+scrollY<=y)idx=i});if(innerHeight+scrollY>=document.body.scrollHeight-4)idx=ids.length-1;L.forEach((x,i)=>x.classList.toggle('on',i===idx));P.style.width=(100*scrollY/Math.max(1,document.body.scrollHeight-innerHeight))+'%'}
   addEventListener('scroll',spy,{passive:true});spy();
 })();
 </script>
