@@ -218,6 +218,31 @@ section{padding:110px 0 0}
 .pgrid{display:grid;grid-template-columns:1.15fr 1fr;gap:22px;margin-top:22px}
 .wip-h{font-size:12px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin-bottom:-6px}
 
+.ph.shot{display:block;width:100%;height:260px;padding:0;border:0;cursor:zoom-in;background:#0a1a4a;position:relative;overflow:hidden}
+.ph.shot img{width:100%;height:100%;object-fit:cover;object-position:top left;transition:transform .6s}
+.proj:hover .ph.shot img{transform:scale(1.04)}
+.ph.shot:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(8,9,15,.7))}
+.ph .zoom{position:absolute;left:14px;bottom:14px;z-index:2;display:flex;align-items:center;gap:8px;background:var(--lime);color:#0a0a0a;font-weight:800;font-size:13px;padding:8px 13px;border-radius:12px}
+.ph .zoom svg{width:16px;height:16px}
+.ph.shot .st{z-index:2}
+.proc{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:16px}
+.proc span{font-size:12px;font-weight:800;color:var(--lime);background:rgba(195,255,26,.08);padding:4px 10px;border-radius:8px}
+.proc svg{width:13px;height:13px;color:#4a4f66;transform:rotate(45deg)}
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:100;background:rgba(5,6,10,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.lb.on{display:flex}
+.lb figure{max-width:1200px;width:100%;text-align:center}
+.lb img{max-width:100%;max-height:74vh;border-radius:16px;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.lb figcaption{margin-top:16px;font-weight:700;color:#dfe0e8}
+.lb figcaption small{display:block;color:var(--mut);font-weight:600;margin-top:4px}
+.lb .x,.lb .nv{position:absolute;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--s2);color:#fff;display:grid;place-items:center;cursor:pointer}
+.lb .x{top:20px;right:20px}
+.lb .nv.p{left:20px;top:50%}.lb .nv.n{right:20px;top:50%}
+.lb .nv.p svg{transform:rotate(-135deg)}.lb .nv.n svg{transform:rotate(45deg)}
+.lb .dots{display:flex;gap:8px;margin-top:14px}
+.lb .dots i{width:8px;height:8px;border-radius:50%;background:#3a3f55}
+.lb .dots i.on{background:var(--lime);width:22px;border-radius:6px}
+@media (max-width:700px){.lb .nv{top:auto;bottom:20px}.lb .nv.p{left:calc(50% - 60px)}.lb .nv.n{right:calc(50% - 60px)}}
 /* case */
 .case-head{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:end;margin-bottom:36px}
 .status{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:rgba(255,159,67,.12);color:#ffb169;padding:7px 13px;border-radius:99px}
@@ -532,12 +557,14 @@ footer .logo{color:var(--tx);font-size:22px}
 
     <div class="pgrid">
       <article class="proj rv">
-        <div class="ph bg-nx">
-          <span class="lab">POWER BI</span><span class="st ok"><i></i>Publicado</span>
-          <svg class="ill" viewBox="0 0 260 150"><rect x="30" y="18" width="210" height="122" rx="14" fill="#0a0a0a" opacity=".2"/><rect x="20" y="8" width="210" height="122" rx="14" fill="#111"/><circle cx="36" cy="22" r="3.5" fill="#ff6a3d"/><circle cx="48" cy="22" r="3.5" fill="#ffd60a"/><circle cx="60" cy="22" r="3.5" fill="#c3ff1a"/><g fill="#c3ff1a"><rect x="44" y="84" width="16" height="30" rx="3"/><rect x="70" y="66" width="16" height="48" rx="3"/><rect x="96" y="78" width="16" height="36" rx="3"/><rect x="122" y="50" width="16" height="64" rx="3"/><rect x="148" y="62" width="16" height="52" rx="3"/></g><path d="M50 70 L90 52 L115 60 L150 36 L180 48 L210 30" fill="none" stroke="#9b6bff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="pb"><span class="num">01</span><h3>Dashboard ANAC — Power BI</h3><p>Análise visual de dados da aviação civil brasileira, transformando uma base pública em indicadores claros e navegáveis.</p>
-          <div class="tags"><span>Power BI</span><span>ANAC</span><span>Visualização</span></div>
+        <button class="ph shot" type="button" data-gal="0" aria-label="Ampliar prints do Dashboard ANAC">
+          <img src="assets/anac-dashboard.webp" alt="Dashboard executivo da ANAC em Power BI" loading="lazy">
+          <span class="st ok"><i></i>Publicado</span>
+          <span class="zoom"><svg class="i"><use href="#grid"/></svg>Ver 5 prints</span>
+        </button>
+        <div class="pb"><span class="num">01</span><h3>Dashboard Executivo ANAC — Power BI</h3><p>Evolução do transporte aéreo brasileiro de 2000 a 2022 com dados públicos da ANAC: passageiros, carga, taxa de ocupação, ASK × RPK e o impacto da pandemia em 2020.</p>
+          <div class="proc"><span>Figma</span><svg class="i"><use href="#arrow"/></svg><span>SQL</span><svg class="i"><use href="#arrow"/></svg><span>Power Query</span><svg class="i"><use href="#arrow"/></svg><span>DAX</span><svg class="i"><use href="#arrow"/></svg><span>Power BI</span></div>
+          <div class="tags"><span>KPIs executivos</span><span>Filtros laterais</span><span>Tooltips personalizados</span><span>Linha de tendência</span></div>
           <a class="go" href="https://github.com/erickkamorim/dashboard-anac-powerbi" target="_blank" rel="noopener">Ver projeto no GitHub <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a></div>
       </article>
       <div class="wip">
@@ -700,6 +727,14 @@ footer .logo{color:var(--tx);font-size:22px}
   </footer>
 </main>
 
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Galeria do Dashboard ANAC">
+  <button class="x" type="button" aria-label="Fechar"><svg class="i"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <button class="nv p" type="button" aria-label="Anterior"><svg class="i"><use href="#arrow"/></svg></button>
+  <figure><img id="lb-img" src="" alt=""><figcaption id="lb-cap"></figcaption></figure>
+  <div class="dots" id="lb-dots"></div>
+  <button class="nv n" type="button" aria-label="Próximo"><svg class="i"><use href="#arrow"/></svg></button>
+</div>
 <nav class="mnav" aria-label="Navegação">
   <a href="#inicio" class="on"><svg class="i"><use href="#home"/></svg><span>Início</span></a>
   <a href="#projetos"><svg class="i"><use href="#grid"/></svg><span>Projetos</span></a>
@@ -731,6 +766,23 @@ footer .logo{color:var(--tx);font-size:22px}
     if(window.innerHeight+window.scrollY>=document.body.scrollHeight-4)idx=ids.length-1;
     navs.forEach(function(list){list.forEach(function(a,i){a.classList.toggle('on',i===idx)})});
   }
+
+  var G=[["assets/anac-dashboard.webp","Dashboard completo","Visão geral com KPIs, evolução anual, ASK × RPK e carga"],
+         ["assets/anac-figma.webp","1. Protótipo no Figma","Layout, paleta e navegação definidos antes do Power BI"],
+         ["assets/anac-powerbi.webp","2. Desenvolvimento no Power BI","Modelagem, medidas em DAX e visualizações"],
+         ["assets/anac-filtros.webp","3. Painel de filtros","Período, empresa, natureza do voo e país"],
+         ["assets/anac-tooltip.webp","4. Tooltip personalizado","Ano, passageiros, carga, load factor e empresas"]];
+  var lb=document.getElementById('lb'),li=document.getElementById('lb-img'),lc=document.getElementById('lb-cap'),ld=document.getElementById('lb-dots'),gi=0;
+  G.forEach(function(){ld.appendChild(document.createElement('i'))});
+  function show(i){gi=(i+G.length)%G.length;li.src=G[gi][0];li.alt=G[gi][1];lc.innerHTML=G[gi][1]+'<small>'+G[gi][2]+'</small>';[].forEach.call(ld.children,function(d,k){d.classList.toggle('on',k===gi)});}
+  function open(i){show(i);lb.classList.add('on');document.body.style.overflow='hidden';}
+  function close(){lb.classList.remove('on');document.body.style.overflow='';}
+  document.querySelectorAll('[data-gal]').forEach(function(b){b.addEventListener('click',function(){open(+b.getAttribute('data-gal'))})});
+  lb.querySelector('.x').addEventListener('click',close);
+  lb.querySelector('.p').addEventListener('click',function(){show(gi-1)});
+  lb.querySelector('.n').addEventListener('click',function(){show(gi+1)});
+  lb.addEventListener('click',function(e){if(e.target===lb)close()});
+  document.addEventListener('keydown',function(e){if(!lb.classList.contains('on'))return;if(e.key==='Escape')close();if(e.key==='ArrowLeft')show(gi-1);if(e.key==='ArrowRight')show(gi+1);});
   window.addEventListener('scroll',spy,{passive:true});spy();
 })();
 </script>
