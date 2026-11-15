@@ -175,6 +175,13 @@ section{padding:110px 0 0}
 
 /* projects */
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:22px}
+.links-proj{display:flex;flex-wrap:wrap;gap:6px 22px}
+@media (min-width:901px){
+  .proj.largo{grid-column:1/-1;flex-direction:row}
+  .proj.largo .ph.shot{width:56%;flex:none;aspect-ratio:auto;min-height:380px}
+  .proj.largo .pb{padding:30px 32px}
+  .proj.largo .pb h3{font-size:28px}
+}
 .proj{background:var(--s2);border:1px solid var(--line);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;transition:transform .3s,border-color .3s}
 .proj:hover{transform:translateY(-8px);border-color:#3a3f55}
 .ph{height:190px;position:relative;display:grid;place-items:center;overflow:hidden}
@@ -551,13 +558,27 @@ footer .logo{color:var(--tx);font-size:22px}
     </div>
 
     <div class="grid">
+      <article class="proj rv largo">
+        <a class="ph shot" href="https://bb-intelligence-lilac.vercel.app" target="_blank" rel="noopener" aria-label="Abrir o BB Intelligence">
+          <img src="assets/proj-bb.webp" alt="Visão Executiva do BB Intelligence: lucro ajustado, ROE, carteira de crédito, eficiência e a ponte do lucro do trimestre" loading="lazy">
+          <span class="st ok"><i></i>No ar</span>
+          <span class="zoom"><svg class="i"><use href="#arrow"/></svg>Abrir o site</span>
+        </a>
+        <div class="pb"><span class="num">01</span><h3>BB Intelligence</h3><p>Plataforma independente de análise do Banco do Brasil feita só com dados públicos: CVM, Banco Central e relatórios de RI. Mostra por que o lucro mudou no trimestre (ponte da DRE que fecha com o número divulgado), alertas automáticos, crédito e risco, e o BB contra Itaú, Bradesco, Santander e Caixa. Cada número aponta para a fonte, a tabela e a página de origem.</p>
+          <div class="proc"><span>Python</span><svg class="i"><use href="#arrow"/></svg><span>PostgreSQL</span><svg class="i"><use href="#arrow"/></svg><span>FastAPI</span><svg class="i"><use href="#arrow"/></svg><span>Next.js</span></div>
+          <div class="tags"><span>ETL validado</span><span>Rastreabilidade</span><span>Testes no CI</span><span>Projeto não oficial</span></div>
+          <div class="links-proj">
+            <a class="go" href="https://bb-intelligence-lilac.vercel.app" target="_blank" rel="noopener">Abrir o site <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a>
+            <a class="go" href="https://github.com/erickkamorim/bb-intelligence" target="_blank" rel="noopener">Código no GitHub <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a>
+          </div></div>
+      </article>
       <article class="proj rv">
         <button class="ph shot" type="button" data-gal="anac:0" aria-label="Ampliar prints do Dashboard ANAC">
           <img src="assets/anac-dashboard.webp" alt="Dashboard executivo da ANAC em Power BI" loading="lazy">
           <span class="st ok"><i></i>Publicado</span>
           <span class="zoom"><svg class="i"><use href="#grid"/></svg>Ver 5 prints</span>
         </button>
-        <div class="pb"><span class="num">01</span><h3>Dashboard Executivo ANAC</h3><p>Evolução do transporte aéreo brasileiro de 2000 a 2022 com dados públicos da ANAC: passageiros, carga, taxa de ocupação, ASK × RPK e o impacto da pandemia em 2020.</p>
+        <div class="pb"><span class="num">02</span><h3>Dashboard Executivo ANAC</h3><p>Evolução do transporte aéreo brasileiro de 2000 a 2022 com dados públicos da ANAC: passageiros, carga, taxa de ocupação, ASK × RPK e o impacto da pandemia em 2020.</p>
           <div class="proc"><span>Figma</span><svg class="i"><use href="#arrow"/></svg><span>SQL</span><svg class="i"><use href="#arrow"/></svg><span>Power Query</span><svg class="i"><use href="#arrow"/></svg><span>DAX</span><svg class="i"><use href="#arrow"/></svg><span>Power BI</span></div>
           <div class="tags"><span>KPIs executivos</span><span>Filtros laterais</span><span>Tooltips personalizados</span><span>Linha de tendência</span></div>
           <a class="go" href="https://github.com/erickkamorim/dashboard-anac-powerbi" target="_blank" rel="noopener">Ver projeto no GitHub <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a></div>
@@ -568,7 +589,7 @@ footer .logo{color:var(--tx);font-size:22px}
           <span class="st ok"><i></i>Publicado</span>
           <span class="zoom"><svg class="i"><use href="#arrow"/></svg>Abrir o FLUXO</span>
         </a>
-        <div class="pb"><span class="num">02</span><h3>FLUXO · Performance Logística</h3><p>Painel interativo com cerca de 95 mil pedidos reais da Olist: entregas no prazo, lead time por etapa, atraso por estado e o efeito do atraso na nota do cliente. Filtros por período e estado.</p>
+        <div class="pb"><span class="num">03</span><h3>FLUXO · Performance Logística</h3><p>Painel interativo com cerca de 95 mil pedidos reais da Olist: entregas no prazo, lead time por etapa, atraso por estado e o efeito do atraso na nota do cliente. Filtros por período e estado.</p>
           <div class="tags"><span>Dashboard interativo</span><span>Python</span><span>SQL</span><span>JavaScript</span></div>
           <a class="go" href="https://erickkamorim.github.io/performance-logistica/" target="_blank" rel="noopener">Abrir o site <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a></div>
       </article>
@@ -578,7 +599,7 @@ footer .logo{color:var(--tx);font-size:22px}
           <span class="st ok"><i></i>Publicado</span>
           <span class="zoom"><svg class="i"><use href="#arrow"/></svg>Abrir a LUPA</span>
         </a>
-        <div class="pb"><span class="num">03</span><h3>LUPA · Análise de Pedidos com SQL</h3><p>Oito perguntas de logística respondidas com SQL: onde o tempo é gasto, quais rotas atrasam, o impacto da postagem do vendedor e se o prazo prometido é realista. Cada resposta traz a consulta e uma recomendação.</p>
+        <div class="pb"><span class="num">04</span><h3>LUPA · Análise de Pedidos com SQL</h3><p>Oito perguntas de logística respondidas com SQL: onde o tempo é gasto, quais rotas atrasam, o impacto da postagem do vendedor e se o prazo prometido é realista. Cada resposta traz a consulta e uma recomendação.</p>
           <div class="tags"><span>SQL</span><span>CTEs</span><span>Funções de janela</span><span>Olist</span></div>
           <a class="go" href="https://erickkamorim.github.io/analise-pedidos-sql/" target="_blank" rel="noopener">Abrir o site <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a></div>
       </article>
@@ -588,7 +609,7 @@ footer .logo{color:var(--tx);font-size:22px}
           <span class="st ok"><i></i>Publicado</span>
           <span class="zoom"><svg class="i"><use href="#arrow"/></svg>Abrir o EIXO</span>
         </a>
-        <div class="pb"><span class="num">04</span><h3>EIXO · Tráfego nos Pedágios</h3><p>1,9 bilhão de passagens pelos pedágios das rodovias federais (ANTT, 2019 a 2021) para testar se o caminhão é termômetro da economia. Na pandemia, os carros caíram 44,7% e os caminhões, metade disso. Inclui a limpeza da base pública e a armadilha que quase gerou uma conclusão errada.</p>
+        <div class="pb"><span class="num">05</span><h3>EIXO · Tráfego nos Pedágios</h3><p>1,9 bilhão de passagens pelos pedágios das rodovias federais (ANTT, 2019 a 2021) para testar se o caminhão é termômetro da economia. Na pandemia, os carros caíram 44,7% e os caminhões, metade disso. Inclui a limpeza da base pública e a armadilha que quase gerou uma conclusão errada.</p>
           <div class="tags"><span>SQL</span><span>Python</span><span>Limpeza de dados</span><span>ANTT</span></div>
           <a class="go" href="https://erickkamorim.github.io/trafego-pedagios/" target="_blank" rel="noopener">Abrir o site <svg class="i" style="width:16px;height:16px"><use href="#arrow"/></svg></a></div>
       </article>
